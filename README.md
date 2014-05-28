@@ -1,12 +1,27 @@
 vm-analyze
 ==========
 
-This repository contains a set of scripts for automatically executing a set of Linux applications, tracing their virtual memory behavior, and analyzing + plotting the trace results.
+This repository contains a set of scripts for tracing the virtual memory behavior of Linux applications, analyzing this trace data, and generating plots and tables that summarize the virtual memory behavior. To facilitate this analysis, this repository includes scripts for automatically executing a set of Linux applications; these automatic execution scripts may be more widely useful than the virtual memory analysis scripts.
 
 This was my first substantial Python project, so the code may be a bit messy. Because it was developed as I learned the features and conventions of the language, in several places I have imported modules poorly, used inconsistent capitalization, have used tuples when I should have used objects, and so on; I will try to correct these things going forward.
 
+Guide to source code:
+* run_apps.py: main script to automatically execute the applications and capture traces of virtual memory behavior.
+* generate_plots.py: main script to analyze the output from run_apps.py and generate plots and tables.
+* analyze_trace.py: superseded by generate_plots.py.
+* analyze/: modules used for analyzing trace data.
+* app_scripts/: scripts that control the execution of each application.
+* conf/: modules that control the execution of the top-level scripts.
+    * applist.py: specifies which applications run_apps.py should execute.
+    * PlotList.py: specifies which plots generate_plots.py should generate.
+    * system_conf.py: specifies directories and other data that may differ across machines.
+* plotting/: modules related to plot generation.
+* trace/: modules for executing applications and capturing trace data.
+* util/: various utility modules and scripts.
+
 The code in this repository currently has the following dependencies:
-* Currently the [pjh/pyutils](https://github.com/pjh/pyutils) repository must be checked out in the same directory.
+* Currently the [pjh/pyutils](https://github.com/pjh/pyutils) repository must be checked out somewhere, and a symlink to 
+in the same directory.
 * To trace virtual memory activity, my patched Linux 3.9.4 kernel must be running: ...
 * ...
 
