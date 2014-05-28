@@ -63,10 +63,10 @@ Setup steps for Python application / tracing scripts:
     * ...
 1. Build the necessary "test programs":
     * (TODO: add the test-programs to this repo! Then clean up these instructions.)
-    * cd apps/test-programs
+    * `cd apps/test-programs`
     * Edit Makefile
         * Make sure that GLIBC is set to /lib/x86_64..., and NOT to my own libc, unless you know what you're doing...
-    * make all
+    * `make all`
 
 Setup steps for Python analysis / plotting scripts:
 
@@ -74,9 +74,9 @@ Setup steps for Python analysis / plotting scripts:
     * Special steps to setup + build + install using python3:
         * ...
 
-To run the app / tracing scripts:
-1. Set conf/applist.py to include the apps you want to run
-1. ./run_apps.py -h
-1. ./run_apps.py
+To execute the applications and trace their virtual memory behavior:
 
+1. Set conf/applist.py to include the apps you want to run
+1. `./run_apps.py -h`
+1. `./run_apps.py`
 
