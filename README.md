@@ -19,33 +19,34 @@ Guide to source code:
 * trace/: modules for executing applications and capturing trace data.
 * util/: various utility modules and scripts.
 
-The code in this repository currently has the following dependencies:
-* Currently the [pjh/pyutils](https://github.com/pjh/pyutils) repository must be checked out somewhere, and a symlink to 
-in the same directory.
+Before using the code in this repository, the following dependencies must be satisfied:
+* The [pjh/pyutils](https://github.com/pjh/pyutils) repository must be checked out somewhere and a symlink to pyutils/pjh_utils.py must be created in the util subdirectory of this repository.
 * To trace virtual memory activity, my patched Linux 3.9.4 kernel must be running: ...
 * ...
+
+So far, the code in this repository has only been run on Ubuntu 12.04 and 13.04 systems. The code is intended to be run with Python 3.3 or greater; some features that are not present in 3.2 are used.
 
 Setup steps for my kernel:
 
 1. cd linux-3.9.4
-1. Configure...
-    - Copy
-    - Make oldconfig
+1. Configure:
+    - Copy a working config-* file from your /boot directory (e.g. run ```uname -r``` and grab the config for your current kernel version) to .config in the linux-3.9.4 directory.
+    - ```make oldconfig```
     - Disable unnecessary features if desired...
         * (I usually just disable Paravirtualization - to make kernel build
           faster, and also because Xen build errors arose (at one point,
           not sure if they still do...) with some of my tracing changes.)
-1. Build and install; I use these steps:
-    make -j2 &> make.out
-    sudo make headers_install
-    sudo make modules_install
-    sudo make install
+1. Build and install; I use these simple steps (but you may wish to find e.g. the suggested Ubuntu steps):
+    * make -j2 &> make.out
+    * sudo make headers_install
+    * sudo make modules_install
+    * sudo make install
 1. Install perf tools to home directory:
-    (Note: you may need these apt packages: python-dev)
-    cd linux-3.9.4/tools/perf
-    make
-    make prefix=$HOME install
-    which perf
+    * (Note: you may need these apt packages: python-dev)
+    * cd linux-3.9.4/tools/perf
+    * make
+    * make prefix=$HOME install
+    * which perf
         * (should see output: `$HOME`/bin/perf)
 
 Setup steps for Python application / tracing scripts:
@@ -78,4 +79,5 @@ To run the app / tracing scripts:
   Set applist.py to include the apps you want to run
   ./run_apps.py -h
   ./run_apps.py
+
 
