@@ -10,7 +10,7 @@ from analyze.cpus_tracker_class import *
 from analyze.cpu_information_class import *
 from analyze.ip_to_fn import *
 from trace.run_common import *
-from analyze.multiapp_plot_class import *
+from plotting.multiapp_plot_class import *
 from analyze.PageEvent import PageEvent
 from util.pjh_utils import *
 from analyze.PlotEvent import PlotEvent

@@ -3,7 +3,7 @@
 # Copyright (c) 2012-2014 Peter Hornyack and University of Washington
 
 from util.pjh_utils import *
-from trace.simulate_segments_lib import *
+from analyze.simulate_segments_lib import *
 import trace.vm_common as vm
 
 module_sep = '->'   # "separator"
