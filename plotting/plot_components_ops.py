@@ -6,7 +6,7 @@ from trace.run_common import *
 from plotting.multiapp_plot_class import *
 from util.pjh_utils import *
 from plotting.plots_common import *
-from trace.vm_mapping_class import *
+from analyze.vm_mapping_class import *
 
 ##############################################################################
 

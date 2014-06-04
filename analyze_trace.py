@@ -13,7 +13,7 @@ from trace.run_common import *
 from plotting.multiapp_plot_class import *
 from analyze.PageEvent import PageEvent
 from util.pjh_utils import *
-from analyze.PlotEvent import PlotEvent
+from plotting.PlotEvent import PlotEvent
 from analyze.process_group_class import *
 from analyze.PTE import PTE, pte_get_linked_vma
 from analyze.simulate_segments_lib import *

@@ -2,14 +2,14 @@
 # Developed 2012-2014 by Peter Hornyack, pjh@cs.washington.edu
 # Copyright (c) 2012-2014 Peter Hornyack and University of Washington
 
-from plot_components_ops import components_ops_plot
-from plot_components_vmas import components_vmas_plot
-from plot_vmacount import vmacount_ts_plot, vmacount_max_col_plot
-from plot_vmaops import *
-from plot_addrspace_sizes import vm_size_ts_plot, virt_phys_size_ts_plot, virt_phys_ratio_ts_plot, virt_phys_size_component_ts_plot, virt_phys_ratio_component_ts_plot
-#from plot_perf_missrate import *
-from plot_perf_totals import new_totals_ts_plot, new_totals_col_plot
-from pjh_utils import *
+from plotting.plot_components_ops import components_ops_plot
+from plotting.plot_components_vmas import components_vmas_plot
+from plotting.plot_vmacount import vmacount_ts_plot, vmacount_max_col_plot
+from plotting.plot_vmaops import *
+from plotting.plot_addrspace_sizes import vm_size_ts_plot, virt_phys_size_ts_plot, virt_phys_ratio_ts_plot, virt_phys_size_component_ts_plot, virt_phys_ratio_component_ts_plot
+#from plotting.plot_perf_missrate import *
+from plotting.plot_perf_totals import new_totals_ts_plot, new_totals_col_plot
+from util.pjh_utils import *
 
 # note: this plotlist is searched linearly... make sure it
 #   doesn't get *too* big.
