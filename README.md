@@ -3,7 +3,7 @@ vm-analyze
 
 This repository contains a set of scripts for tracing the virtual memory behavior of Linux applications, analyzing this trace data, and generating plots and tables that summarize the virtual memory behavior. To facilitate this analysis, this repository includes scripts for automatically executing a set of Linux applications; these automatic execution scripts may be more widely useful than the virtual memory analysis scripts.
 
-This was my first substantial Python project, so the code may be a bit messy. Because it was developed as I learned the features and conventions of the language, in several places I have imported modules poorly, used inconsistent capitalization, have used tuples when I should have used objects, and so on; I will try to correct these things going forward.
+This was my first substantial Python project, so the code may be a bit messy. Because it was developed as I learned the features and conventions of the language, in several places I have imported modules poorly, used inconsistent capitalization, used tuples when I should have used objects, used tabs instead of spaces, and so on; I will try to correct these things going forward.
 
 Guide to source code:
 * run_apps.py: main script to automatically execute the applications and capture traces of virtual memory behavior.
@@ -21,8 +21,7 @@ Guide to source code:
 
 Before using the code in this repository, the following dependencies must be satisfied:
 * The [pjh/pyutils](https://github.com/pjh/pyutils) repository must be checked out somewhere and a symlink to pyutils/pjh_utils.py must be created in the util subdirectory of this repository.
-* To trace virtual memory activity, my patched Linux 3.9.4 kernel must be running: ...
-* ...
+* To trace virtual memory activity, my patched Linux 3.9.4 kernel must be running: checkout the vm-analyze branch of [pjh/linux-stable](https://github.com/pjh/linux-stable/tree/vm-analyze), build it and install it.
 
 So far, the code in this repository has only been run on Ubuntu 12.04 and 13.04 systems. The code is intended to be run with Python 3.3 or greater; some features that are not present in 3.2 are used.
 
