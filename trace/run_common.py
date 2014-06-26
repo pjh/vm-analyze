@@ -20,7 +20,7 @@ import time
 targetpidsfile  = 'target_pids'
 analysisdirname = 'generate-analysis'
 PERFREPORT_DIRNAME = 'perf-reports'
-RUN_OUTDIR  = "{}/measurement_results".format(scripts_dir)
+RUN_OUTDIR  = "{}/run".format(data_dir)
 latest_linkdir  = "{}/latest".format(RUN_OUTDIR)
 proc_groups_fname = 'process_groups.tsv'
 saved_vmas_fname = 'all_vmas.tsv'

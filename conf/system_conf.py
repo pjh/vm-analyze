@@ -8,14 +8,13 @@
 system = 'verbena'
 
 home_dir		= '/home/pjh'   # must be absolute!
-repo_dir		= "{}/research".format(home_dir)
-  # directory where "virtual" git repo was checked out to
 PERF_DIR		= "{}/bin".format(home_dir)
-
-virtual_dir		= "{}/virtual".format(repo_dir)
-scripts_dir		= "{}/measure".format(virtual_dir)
-apps_dir		= "{}/apps".format(virtual_dir)
-LTRACE_DIR      = "{}/ltrace_outfiles".format(virtual_dir)
+repos_dir       = "{}/research".format(home_dir)
+scripts_dir		= "{}/vm-analyze".format(repos_dir)
+conf_dir        = "{}/conf".format(scripts_dir)
+apps_dir		= "{}/vmstudy-apps".format(repos_dir)
+data_dir        = "{}/vmstudy-data".format(repos_dir)
+LTRACE_DIR      = "{}/ltrace_outfiles".format(data_dir)
 
 suggested_tracebuf_size_kb = 512 * 1024
 
@@ -28,8 +27,9 @@ libreoffice_bin = '/usr/lib/libreoffice/program/soffice.bin'
   # Use soffice.bin directly, rather than the symlinks and wrapper scripts
   # around it.
 
-glibc_dir		= "{}/glibc-testinstall/lib".format(virtual_dir)
-gcc_dir			= "{}/gcc-testinstall/lib64".format(virtual_dir)
+oldrepo_dir     = "{}/virtual-uw".format(repos_dir)
+glibc_dir		= "{}/glibc-testinstall/lib".format(oldrepo_dir)
+gcc_dir			= "{}/gcc-testinstall/lib64".format(oldrepo_dir)
 
 # These are used for determining whether or not files should count
 # as shared library files.
@@ -47,14 +47,14 @@ SHARED_LIB_DIRS = [
 # file output (and hence my vma filename), the symlink becomes the true
 # directory. This is really extremely super annoying.
 possible_glibc_dirs = [
-		"{}/glibc-testinstall/lib".format(virtual_dir),
-		"{}/glibc-testinstall-first/lib".format(virtual_dir),
-		"{}/glibc-testinstall-notailcalls/lib".format(virtual_dir)
+		"{}/glibc-testinstall/lib".format(oldrepo_dir),
+		"{}/glibc-testinstall-first/lib".format(oldrepo_dir),
+		"{}/glibc-testinstall-notailcalls/lib".format(oldrepo_dir)
 	]
 possible_gcc_dirs = [
-		"{}/gcc-testinstall/lib64".format(virtual_dir),
-		"{}/gcc-testinstall-first/lib64".format(virtual_dir),
-		"{}/gcc-testinstall-notailcalls/lib64".format(virtual_dir)
+		"{}/gcc-testinstall/lib64".format(oldrepo_dir),
+		"{}/gcc-testinstall-first/lib64".format(oldrepo_dir),
+		"{}/gcc-testinstall-notailcalls/lib64".format(oldrepo_dir)
 	]
 SHARED_LIB_DIRS += possible_glibc_dirs
 SHARED_LIB_DIRS += possible_gcc_dirs
@@ -75,7 +75,7 @@ newlibs_envmap = {    # envmap = {
 		'LD_RUN_PATH'     : lib_dirs,
 		}
 
-sys_debug_dir   = '/sys/kernel/debug'   # may differ on other systems
+sys_debug_dir   = '/sys/kernel/debug'   # could differ on other systems
 
 if __name__ == '__main__':
 	print("Cannot run stand-alone")

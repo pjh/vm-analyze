@@ -2225,9 +2225,9 @@ def process_pte_trace_event(event_match, vma_match, proc_tracker, tgid,
 		# traced more carefully.
 		#   do_pmd_numa_page: seen for firefox trace from stjohns-X
 		#   do_numa_page: same
-		#ignorefns = []
-		ignorefns = ['buffer_migrate_page', 'migrate_page',
-				'move_to_new_page', 'do_pmd_numa_page', 'do_numa_page',]
+		ignorefns = []
+		#ignorefns = ['buffer_migrate_page', 'migrate_page',
+		#		'move_to_new_page', 'do_pmd_numa_page', 'do_numa_page',]
 		ignore = False
 		for fn in ignorefns:
 			if fn in pte_event_msg:
