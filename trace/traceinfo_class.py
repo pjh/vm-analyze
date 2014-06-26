@@ -104,6 +104,7 @@ trace_userstack_syms = 0
   # userstacktrace) are enabled.
 trace_vma_events     = 1
 trace_pte_events     = 0
+trace_rss_events     = 0
 trace_sched_switch   = 0
   # Note: depending on how kernel is built, may cause deadlock during
   # userstacktrace collection??
@@ -173,14 +174,16 @@ class traceinfo:
 		if not os.path.exists(outputdir):
 			os.makedirs(outputdir)
 
-		if trace_userstacks != 0 and trace_pte_events != 0:
+		if (trace_userstacks != 0 and 
+            (trace_pte_events != 0 or trace_rss_events != 0)):
 			print_error_exit(tag, ("can't set both trace_userstacks={} "
-				"and trace_pte_events={} - otherwise, when collecting "
+				"and trace_pte_events={} or trace_rss_events={} - "
+                "otherwise, when collecting "
 				"userstack entries for 'do_page_fault' code path that "
 				"contains pte trace events, you may invoke further "
 				"page faults, causing recursive trace events or "
 				"whatever and leading to deadlock!").format(
-				trace_userstacks, trace_pte_events))
+				trace_userstacks, trace_pte_events, trace_rss_events))
 
 		# Set kernel tracing options:
 		options = []
@@ -197,6 +200,8 @@ class traceinfo:
 			trace_vma_events, tdir))
 		options.append(("echo {} > {}/events/pte/enable").format(
 			trace_pte_events, tdir))
+		options.append(("echo {} > {}/events/rss/enable").format(
+			trace_rss_events, tdir))
 		options.append(("echo {} > {}/events/sched/sched_switch/"
 			"enable").format(trace_sched_switch, tdir))
 		options.append(
