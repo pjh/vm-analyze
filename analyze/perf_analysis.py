@@ -13,12 +13,12 @@
 # of it as "value" or "count".
 
 from util.pjh_utils import *
-from analyze.run_common import *
 from analyze.simulate_segments_lib import *
-from analyze.traceinfo_class import *
+from trace.run_common import *
+from trace.traceinfo_class import *
 import plotting.multiapp_plot_class as multiapp_plot
-import plotting.plot_perf_missrate
-import conf.PlotList
+import plotting.plot_perf_missrate as plot_perf_missrate
+import conf.PlotList as PlotList
 
 import os
 import re

@@ -20,12 +20,12 @@ from analyze.simulate_segments_lib import *
 from analyze.vm_mapping_class import *
 from conf.system_conf import *
 import trace.vm_common as vm
-import conf.PlotList
+import conf.PlotList as PlotList
 import plotting.plots_common as plots
-import plotting.plot_os_overheads
-import plotting.plot_vma_sizes
-import plotting.plot_vaspace
-import plotting.plot_vmacount
+import plotting.plot_os_overheads as plot_os_overheads
+import plotting.plot_vma_sizes as plot_vma_sizes
+import plotting.plot_vaspace as plot_vaspace
+import plotting.plot_vmacount as plot_vmacount
 import os
 import re
 import shlex
@@ -2248,6 +2248,71 @@ def process_pte_trace_event(event_match, vma_match, proc_tracker, tgid,
 
 	return plot_event
 
+# Handles an mm_rss_* trace event.
+# Returns: a PlotEvent object on success, or None if there was an error
+#   or we don't care about this event for plotting purposes.
+def process_rss_trace_event(event_match, proc_tracker, tgid,
+		linenum, usermodule, userfn):
+	tag = 'process_rss_trace_event'
+
+	print_debug(tag, ("got rss event: {}").format(event_match.groups()))
+	# ('omp-csr', '4889', '000', '.... ', '7774457838455', 'mm_rss',
+	#  'pid=4889 tgid=4889 ptgid=4832 [__do_fault]: rss_stat[MM_FILEPAGES]=51')
+
+	'''
+	pte_event_type = event_match.group('trace_event').strip()
+	pte_event_msg = event_match.group('event_msg').strip()
+	proc_info = proc_tracker.get_process_info(tgid)
+	plot_event = None
+
+	# Switch on pte_event_type, which corresponds to a particular trace
+	# event declared in include/trace/events/pte.h.
+	if pte_event_type == 'pte_mapped':
+		plot_event = process_pte_mapped(event_match, vma_match,
+				proc_tracker, proc_info)
+	elif pte_event_type == 'pte_update':
+		pass
+	elif pte_event_type == 'pte_at':
+		pass
+	elif pte_event_type == 'pmd_at':
+		# saw this in firefox trace from stjohns over ssh-X...
+		pass
+	elif pte_event_type == 'pte_cow':
+		pass
+	elif pte_event_type == 'pte_fault':
+		pass
+	elif pte_event_type == 'pte_printk':
+		# Most of the time we don't want to ignore pte_printk messages;
+		# they alert us to conditions in the kernel that need to be
+		# traced more carefully.
+		#   do_pmd_numa_page: seen for firefox trace from stjohns-X
+		#   do_numa_page: same
+		ignorefns = []
+		#ignorefns = ['buffer_migrate_page', 'migrate_page',
+		#		'move_to_new_page', 'do_pmd_numa_page', 'do_numa_page',]
+		ignore = False
+		for fn in ignorefns:
+			if fn in pte_event_msg:
+				ignore = True
+				break
+		if not ignore:
+			print_unexpected(True, tag, ("pte_printk: {}").format(
+				pte_event_msg))
+		else:
+			print_debug(tag, ("ignoring this pte_printk: {}").format(
+				pte_event_msg))
+	else:
+		print_unexpected(True, tag, ("unexpected pte_event_type "
+			"{}").format(pte_event_type))
+
+	# bookmark TODO
+	#proc_info.update_pte_stats(pte_event_type)
+
+	return plot_event
+	'''
+
+	return None
+
 def handle_userstacks_if_needed(process_userstacks, event_match,
 		vma_match, ip_to_fn, trace_f, linenum, mmap_pid, tgid,
 		proc_tracker):
@@ -2677,6 +2742,8 @@ def determine_trace_event_type(event_match):
 		trace_event_type = 'pte'
 	elif re.compile(r'^pmd_').match(trace_event):
 		trace_event_type = 'pmd'
+	elif re.compile(r'^mm_rss').match(trace_event):
+		trace_event_type = 'rss'
 	elif re.compile(r'^mmap_').match(trace_event):
 		trace_event_type = 'mmap'
 	elif re.compile(r'^sched_').match(trace_event):
@@ -2904,6 +2971,11 @@ def process_trace_file(trace_f, proc_tracker, outputdir, group_multiproc,
 					trace_event_type == 'pmd'):
 				plot_event = process_pte_trace_event(
 					event_match, vma_match, proc_tracker, tgid,
+					linenum, usermodule, userfn)
+			elif trace_event_type == 'rss':
+				# vma_match will be None!
+				plot_event = process_rss_trace_event(
+					event_match, proc_tracker, tgid,
 					linenum, usermodule, userfn)
 			elif trace_event_type == 'sched':
 				(is_plot_event, modifiedvma) = process_sched_trace_event(

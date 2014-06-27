@@ -177,7 +177,7 @@ def vaspace_plotfn(seriesdict, plotname, workingdir):
 		for perms_key in vm.PERMS_KEYS:
 			# Make sure to do these steps even when we skip a
 			# permission type:
-			color = vm.PERMS_KEY_COLOR[perms_key]
+			color = plots.PERMS_KEY_COLOR[perms_key]
 			y_value += 1  # start at height 1!
 
 			# Look for a series matching this perms_key; unfortunately

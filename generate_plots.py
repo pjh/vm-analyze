@@ -200,7 +200,7 @@ if __name__ == '__main__':
 		allplots += PlotList.analysis_plotlist
 	
 	if analyze_perf:
-		import perf_analysis
+		import analyze.perf_analysis as perf_analysis
 		newplots = analyze_apps(measurementdir, traceinfo.PERF_DATA,
 				perf_analysis.perf_main, group_multiproc,
 				process_userstacks, lookup_fns, skip_page_events)
