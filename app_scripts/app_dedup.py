@@ -6,7 +6,7 @@
 # 
 # Build + setup instructions: do these once / occasionally by hand, not
 # done automatically by this script.
-#   cd to parsec-3.0 directory
+#   cd to parsec-3.0 directory (in conf.system_conf.apps_dir)
 #   source env.sh
 #   parsecmgmt -a fullclean -p parsec.dedup parsec.zlib parsec.ssl
 #   parsecmgmt -a fulluninstall -p parsec.dedup parsec.zlib parsec.ssl

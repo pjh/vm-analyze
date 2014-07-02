@@ -125,6 +125,16 @@ pte_mapped_re = re.compile(r"""
 	new_pte_flags=(?P<new_flags>[0-9A-Fa-f]+)
 	""", re.VERBOSE)
 
+# pid=18825 tgid=18825 ptgid=18603 [__do_fault]: rss_stat[MM_FILEPAGES]=51
+rss_mapped_re = re.compile(r"""
+	pid=(?P<pid>\d+)[ ]
+	tgid=(?P<tgid>\d+)[ ]
+	ptgid=(?P<ptgid>\d+)[ ]
+	\[(?P<fn_label>.+)\]:[ ]
+	rss_stat\[(?P<pagetype>.+)\]=
+	(?P<pagecount>\d+)
+	""", re.VERBOSE)
+
 # sched_switch trace events look like this (note: the *_tgid are added by me)
 #     <idle>-0     [000] d... 985685743549368: sched_switch:
 #     prev_comm=swapper/0 prev_pid=0 prev_tgid=123 prev_prio=120

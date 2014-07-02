@@ -13,16 +13,18 @@ class PlotEvent:
 	# two will be set to non-None.
 	vma = None            # class vm_mapping
 	page_event = None     # class PageEvent
+	rss_event = None      # class RssEvent
 	cp_event = None       # class CheckpointEvent
 	perf_sample = None    # class perf_sample
 	datapoint = None      # arbitrary (understood by a particular datafn)
 
-	def __init__(self, vma=None, page_event=None, cp_event=None,
-			perf_sample = None, datapoint=None):
+	def __init__(self, vma=None, page_event=None, rss_event=None,
+			cp_event=None, perf_sample = None, datapoint=None):
 		tag = "{}.__init__".format(self.tag)
 
 		self.vma = vma
 		self.page_event = page_event
+		self.rss_event = rss_event
 		self.cp_event = cp_event
 		self.perf_sample = perf_sample
 		self.datapoint = datapoint

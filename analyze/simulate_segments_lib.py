@@ -10,6 +10,7 @@ import itertools
 import os
 import re
 import shutil
+from collections import defaultdict
 
 min_segment_size = 1   # must be a power of 2!!!
 
@@ -326,6 +327,8 @@ class process_info:
 	max_vm_size = None
 	max_vm_size_time = None
 
+	rss_pages = None
+
 	# pid is required for construction; everything else may be set later.
 	def __init__(self, pid):
 		tag = "{0}.__init__".format(self.tag)
@@ -376,6 +379,7 @@ class process_info:
 		self.total_vm_size = 0
 		self.max_vm_size = 0
 		self.max_vm_size_time = -1
+		self.rss_pages = defaultdict(int)
 
 		# Leave alone: pid, ptgid, is_rootproc, tgid_for_stats
 		
@@ -1184,6 +1188,28 @@ class process_info:
 			#	"left_addr={0}").format(hex(left_addr)))
 
 		return
+
+	# Updates the rss (resident in physical memory) pages for this process.
+	# pagetype must be one of RSS_TYPES (see vm_common.py). pagecount is
+	# the *current* number of pages of this type (not the +/- change in
+	# pagecount). Due to the way that the kernel tracks the rss page count,
+	# pagecount can possibly be negative.
+	# Returns: True on success, False on error.
+	def set_rss_pages(self, pagetype, pagecount):
+		tag = "{}.update_rss".format(self.tag)
+
+		if pagetype not in RSS_TYPES:
+			print_error(tag, ("invalid pagetype={}, not in RSS_TYPES="
+				"{}").format(pagetype, RSS_TYPES))
+			return False
+
+		self.rss_pages[pagetype] = pagecount
+		return True
+
+	# Returns a reference to the dict that maps RSS_TYPES to page counts.
+	# Note that some RSS_TYPES may not have been entered into the dict yet.
+	def get_rss_pages(self):
+		return self.rss_pages
 
 #############################################################################
 # Not part of process_info class:

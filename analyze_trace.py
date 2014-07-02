@@ -12,6 +12,7 @@ from analyze.ip_to_fn import *
 from trace.run_common import *
 from plotting.multiapp_plot_class import *
 from analyze.PageEvent import PageEvent
+from analyze.RssEvent import RssEvent
 from util.pjh_utils import *
 from plotting.PlotEvent import PlotEvent
 from analyze.process_group_class import *
@@ -2119,6 +2120,57 @@ def process_sched_trace_event(trace_event, event_match, cpu_tracker,
 
 	return
 
+# Handles an mm_rss trace event.
+# Returns: a PlotEvent object on success, or None if there was an error
+#   or we don't care about this event for plotting purposes.
+def process_mm_rss(event_match, proc_tracker, proc_info):
+	tag = 'process_mm_rss'
+
+	rss_event_msg = event_match.group('event_msg').strip()
+		# pid=18825 tgid=18825 ptgid=18603 [__do_fault]: rss_stat[MM
+		# _FILEPAGES]=51
+	rss_match = rss_mapped_re.match(rss_event_msg)
+	if not rss_match:
+		print_unexpected(True, tag, ("rss_match failed on {}").format(
+			rss_event_msg))
+	
+	kernel_timestamp = float(event_match.group('timestamp'))
+	pid = int(rss_match.group('pid'))
+	tgid = int(rss_match.group('tgid'))
+	ptgid = int(rss_match.group('ptgid'))
+	kernel_fn = rss_match.group('fn_label').strip()
+	pagetype = rss_match.group('pagetype').strip()
+	pagecount = int(rss_match.group('pagecount'))
+	print_debug(tag, ("timestamp={}, pid={}, tgid={}, ptgid={}, "
+		"kernel_fn={}, pagetype={}, pagecount={}").format(
+		kernel_timestamp, pid, tgid, ptgid, kernel_fn, pagetype,
+		pagecount))
+
+	if pagetype not in vm.RSS_TYPES:
+		print_unexpected(True, tag, ("invalid pagetype={}, expect one "
+			"of {}").format(pagetype, vm.RSS_TYPES))
+		return None
+	if pagecount < 0:
+		# We actually expect this to possibly happen, due to the way
+		# that Linux tracks the rss count (see notes I added in the
+		# kernel).
+		print_unexpected(False, tag, ("got negative pagecount={} for "
+			"type {} in process {}").format(pagecount, pagetype,
+			proc_info.name()))
+
+	# pagecount is the *current* number of pages of this type (not the
+	# delta of pages).
+	ret = proc_info.set_rss_pages(pagetype, pagecount)
+	if not ret:
+		print_error(tag, ("set_rss_pages returned error"))
+		return None
+
+	rss_pages = proc_info.get_rss_pages()
+	rss_event = RssEvent(rss_pages, kernel_timestamp)
+	plot_event = PlotEvent(rss_event=rss_event)
+
+	return plot_event
+
 # Handles a pte_mapped trace event.
 # Returns: a PlotEvent object on success, or None if there was an error
 #   or we don't care about this event for plotting purposes.
@@ -2243,7 +2295,7 @@ def process_pte_trace_event(event_match, vma_match, proc_tracker, tgid,
 		print_unexpected(True, tag, ("unexpected pte_event_type "
 			"{}").format(pte_event_type))
 
-	# bookmark TODO
+	# TODO
 	#proc_info.update_pte_stats(pte_event_type)
 
 	return plot_event
@@ -2255,63 +2307,29 @@ def process_rss_trace_event(event_match, proc_tracker, tgid,
 		linenum, usermodule, userfn):
 	tag = 'process_rss_trace_event'
 
-	print_debug(tag, ("got rss event: {}").format(event_match.groups()))
+	#print_debug(tag, ("got rss event: {}").format(event_match.groups()))
 	# ('omp-csr', '4889', '000', '.... ', '7774457838455', 'mm_rss',
 	#  'pid=4889 tgid=4889 ptgid=4832 [__do_fault]: rss_stat[MM_FILEPAGES]=51')
 
-	'''
-	pte_event_type = event_match.group('trace_event').strip()
-	pte_event_msg = event_match.group('event_msg').strip()
+	rss_event_type = event_match.group('trace_event').strip()
 	proc_info = proc_tracker.get_process_info(tgid)
 	plot_event = None
+	#print_debug(tag, ("event_type={}, event_msg={}".format(
+	#	rss_event_type, rss_event_msg)))
 
-	# Switch on pte_event_type, which corresponds to a particular trace
-	# event declared in include/trace/events/pte.h.
-	if pte_event_type == 'pte_mapped':
-		plot_event = process_pte_mapped(event_match, vma_match,
-				proc_tracker, proc_info)
-	elif pte_event_type == 'pte_update':
-		pass
-	elif pte_event_type == 'pte_at':
-		pass
-	elif pte_event_type == 'pmd_at':
-		# saw this in firefox trace from stjohns over ssh-X...
-		pass
-	elif pte_event_type == 'pte_cow':
-		pass
-	elif pte_event_type == 'pte_fault':
-		pass
-	elif pte_event_type == 'pte_printk':
-		# Most of the time we don't want to ignore pte_printk messages;
-		# they alert us to conditions in the kernel that need to be
-		# traced more carefully.
-		#   do_pmd_numa_page: seen for firefox trace from stjohns-X
-		#   do_numa_page: same
-		ignorefns = []
-		#ignorefns = ['buffer_migrate_page', 'migrate_page',
-		#		'move_to_new_page', 'do_pmd_numa_page', 'do_numa_page',]
-		ignore = False
-		for fn in ignorefns:
-			if fn in pte_event_msg:
-				ignore = True
-				break
-		if not ignore:
-			print_unexpected(True, tag, ("pte_printk: {}").format(
-				pte_event_msg))
-		else:
-			print_debug(tag, ("ignoring this pte_printk: {}").format(
-				pte_event_msg))
+	# Switch on rss_event_type, which corresponds to a particular trace
+	# event declared in include/trace/events/rss.h.
+	if rss_event_type == 'mm_rss':
+		plot_event = process_mm_rss(event_match, proc_tracker, proc_info)
+	elif rss_event_type == 'mm_rss_notcurrent':
+		print_error_exit(tag, "TODO: implement rss_event_type={}".format(
+			rss_event_type))
+		return None
 	else:
-		print_unexpected(True, tag, ("unexpected pte_event_type "
-			"{}").format(pte_event_type))
-
-	# bookmark TODO
-	#proc_info.update_pte_stats(pte_event_type)
+		print_unexpected(True, tag, ("invalid rss_event_type: {}").format(
+			rss_event_type))
 
 	return plot_event
-	'''
-
-	return None
 
 def handle_userstacks_if_needed(process_userstacks, event_match,
 		vma_match, ip_to_fn, trace_f, linenum, mmap_pid, tgid,

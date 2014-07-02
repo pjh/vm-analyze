@@ -37,6 +37,8 @@ MEM_TYPES = ["Size", "Rss", "Pss", "Shared_Clean", "Shared_Dirty",
 	"AnonHugePages", "Swap", "KernelPageSize", "MMUPageSize", 
 	"Locked"]  # all of the different memory types in the smaps files.
 
+RSS_TYPES = ['MM_FILEPAGES', 'MM_ANONPAGES', 'MM_SWAPENTS']
+
 # This is an "enum" for the different types of operations that can be
 # performed on a vma. These should correspond to the types of mmap_vma_*
 # kernel trace events that I've added.
