@@ -41,10 +41,10 @@ dedup_version    = 'amd64-linux.gcc'
 dedup_bindir     = ("{}/parsec-3.0/pkgs/kernels/dedup/inst/{}/bin").format(
 					apps_dir, dedup_version)
 dedup_datadir    = ("{}/parsec-3.0/pkgs/kernels/dedup/inputs").format(apps_dir)
-#dedup_datafile   = ("{}/FC-6-x86_64-disc1.iso").format(dedup_datadir) #627M
+dedup_datafile   = ("{}/FC-6-x86_64-disc1.iso").format(dedup_datadir) #627M
   # With PTE trace events active, using the .iso input overflows trace
   # buffer even with 1.5 GB / core!
-dedup_datafile   = ("{}/media_simlarge.dat").format(dedup_datadir) #185M
+#dedup_datafile   = ("{}/media_simlarge.dat").format(dedup_datadir) #185M
   # With this input file and PTE trace events active (and perf tracing
   # on), the trace buffer *nearly* fills up at 512 MB / core - I saw
   # it fill up after the app was done, but when the final trace-off

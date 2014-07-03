@@ -69,6 +69,14 @@ PATTERN_CLOSE = 1
 #headless = False
 headless = True
 
+# This script will attempt to navigate to all of the URLs that are
+# listed in this file.
+browser_urls = "{}/app_browser_urls_30.txt".format(conf_dir)
+#browser_urls = "{}/app_browser_urls.txt".format(conf_dir)
+#browser_urls = "{}/app_browser_urls_alexa.txt".format(conf_dir)
+#browser_urls = "{}/app_browser_urls_vmstudy.txt".format(conf_dir)
+#browser_urls = None   # use "default urls"
+
 # Use my own built version of Firefox, or use the standard
 # /usr/bin/firefox?
 #   I thought that this was finally working with my automated script
@@ -76,14 +84,6 @@ headless = True
 #   hangs with my firefox?
 #use_my_firefox = True
 use_my_firefox = False
-
-# This script will attempt to navigate to all of the URLs that are
-# listed in this file.
-#browser_urls = "{}/app_browser_urls_30.txt".format(conf_dir)
-#browser_urls = "{}/app_browser_urls.txt".format(conf_dir)
-#browser_urls = "{}/app_browser_urls_alexa.txt".format(conf_dir)
-browser_urls = "{}/app_browser_urls_vmstudy.txt".format(conf_dir)
-#browser_urls = None   # use "default urls"
 
 # Since there's no good way to determine when the page load has
 # completed, we'll wait for the specified timeout value for each page.
@@ -93,14 +93,11 @@ browser_urls = "{}/app_browser_urls_vmstudy.txt".format(conf_dir)
 # fairly low.
 pageloadtime = 6
 
-ff_dir = ("{}/research/virtual/apps/test-root/firefox-notstripped").format(
-		home_dir)
-#ff_dir = '/usr/bin'
+ff_dir = '/usr/bin'
 ff_cmd =  "{}/firefox".format(ff_dir)
 ff_opts = "...".format()
 
-CHROMEDRIVER_BIN = ("{}/selenium-chromedriver/chromedriver").format(apps_dir)
-#CHROMEDRIVER_BIN = ("{}/chromedriver-2.9").format(apps_dir)
+CHROMEDRIVER_BIN = ("{}/chromedriver-2.9").format(apps_dir)
 
 default_urls = [
 		'http://en.wikipedia.org/wiki/Dynamic_linker',

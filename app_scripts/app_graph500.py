@@ -9,9 +9,10 @@ from trace.run_common import *
 from trace.traceinfo_class import *
 
 #g500_size = 14   # default
-g500_size = 18   # only about 128 MB in memory
+#g500_size = 18   # only about 128 MB in memory
 #g500_size = 22   # about 1 GB memory
 #g500_size = 23   # about 2 GB memory
+g500_size = 24    # stjohns: 10.4GB virtual, 9.0GB resident
 #g500_size = 25    # stjohns: 19.2GB virtual, 17.5GB resident, about 6 mins
 g500_dir =  "{}/graph500".format(apps_dir)
 g500_omp =  "{}/omp-csr/omp-csr".format(g500_dir)
@@ -122,7 +123,8 @@ def g500_exec(outputdir, omp_or_seq):
 	else:
 		print_error(tag, ("trace_on() or run_g500() returned failure; "
 			"will just clean up and return now. target_pids will be "
-			"empty...").format())
+			"empty, but manually echo g500pid={} to it if you "
+			"wish").format(g500pid))
 
 	g500_cleanup([g500_stdout, g500_stderr])
 

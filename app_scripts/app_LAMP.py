@@ -29,6 +29,7 @@ import signal
 # other workloads to be generated for testing purposes, while still
 # tracing the LAMP applications as usual.
 USE_MANUAL_CLIENT = False
+USE_MEMCACHED = True
 WHICHBROWSER = 'firefox'   # chrome not tested yet
 
 # Configuration for Mediawiki client workload:
@@ -160,6 +161,12 @@ def mediawiki_exec(outputdir, services, manualservice=None):
 	tracer = traceinfo(target_service)
 	tracesuccess = False
 
+	# HACK: for now, start memcached using its own script (with the
+	# source code I've downloaded myself); don't use ubuntu service
+	# / package, which I haven't even installed on stjohns so far.
+	#   TODO: set up "service" scripts manually, to point to my
+	#   own executable?
+
 	# Initialization: set up stdout and stderr files, and stop
 	# any services that may be running.
 	for service in services:
@@ -168,9 +175,20 @@ def mediawiki_exec(outputdir, services, manualservice=None):
 		stdouts.append(service_stdout)
 		stderrs.append(service_stderr)
 
-		(success, service_pid) = ubuntu_services.service_cmd(
-				service, 'stop', outputdir, service_stdout,
-				service_stderr)
+		if service == 'memcached':   #hack
+			if USE_MEMCACHED:
+				success = pgrep_pkill('memcached', 2)
+				if success:
+					print_debug(tag, ("pgrep_pkill ensured that no "
+						"memcached processes are running"))
+				else:
+					print_error(tag, ("pgrep_pkill failed - there may "
+						"be other memcached processes running?"))
+					return []
+		else:
+			(success, service_pid) = ubuntu_services.service_cmd(
+					service, 'stop', outputdir, service_stdout,
+					service_stderr)
 
 	if USE_MANUAL_CLIENT:
 		print_debug(tag, ("skipping browser client start"))
@@ -199,8 +217,18 @@ def mediawiki_exec(outputdir, services, manualservice=None):
 					"start loop"))
 				break
 
-		(success, service_pid) = ubuntu_services.service_cmd(
-				service, 'start', outputdir, stdouts[i], stderrs[i])
+		if service == 'memcached':   #hack
+			if USE_MEMCACHED:
+				(success, mc_p) = memcached.start_mc_server(stdouts[i],
+						stderrs[i])
+				if success:
+					service_pid = mc_p.pid
+			else:
+				print_debug(tag, ("USE_MEMCACHED not set, so skipping "
+					"memcached start"))
+		else:
+			(success, service_pid) = ubuntu_services.service_cmd(
+					service, 'start', outputdir, stdouts[i], stderrs[i])
 
 		if success and service_pid > 1:
 			service_pids.append(service_pid)
@@ -222,7 +250,7 @@ def mediawiki_exec(outputdir, services, manualservice=None):
 			signal.signal(signal.SIGINT, signal_handler_nop)
 			print(("Ok, tracing is on, start the {} service, wait "
 				"a little while (perhaps issue a separate web request "
-				"to verbena.cs.washington.edu/mediawiki/index.php/"
+				"to stjohns.cs.washington.edu/mediawiki/index.php/"
 				"Navidad to ensure mediawiki setup is "
 				"working) and "
 				"press Ctrl-C to begin the client workload. While "
@@ -269,8 +297,12 @@ def mediawiki_exec(outputdir, services, manualservice=None):
 	for i in range(len(services) - 1, -1, -1):
 		service = services[i]
 
-		(success, ignore) = ubuntu_services.service_cmd(
-				service, 'stop', outputdir, stdouts[i], stderrs[i])
+		if service == 'memcached':   #hack
+			if USE_MEMCACHED:
+				success = memcached.stop_mc_server(mc_p)
+		else:
+			(success, ignore) = ubuntu_services.service_cmd(
+					service, 'stop', outputdir, stdouts[i], stderrs[i])
 
 		if not success:
 			print_error(tag, ("received error on {} stop, will "

@@ -25,8 +25,8 @@ from trace.traceinfo_class import traceinfo
 from util.pjh_utils import *
 import signal
 
-MC_POOLSIZE_MB = 1024
-#MC_POOLSIZE_MB = 10240
+#MC_POOLSIZE_MB = 1024
+MC_POOLSIZE_MB = 10240
   # size of memcached "buffer pool" in MB. Make sure that the client
   # dataset file specified below matches the buffer pool size (it's
   # probably ok if the dataset is too large, as values will just be
@@ -41,7 +41,7 @@ GETPUT_PERCENTAGE = 0.8
 WHICHCLIENT = 'cloudsuite'
   # client choices: 'cloudsuite', ...
 
-MC_BIN = "/usr/bin/memcached"
+MC_BIN = "{}/memcached/memcached".format(apps_dir)
 #MC_PIDFILE = '/var/run/memcached.pid'
 MC_APPNAME = 'mcache'
 
@@ -54,8 +54,8 @@ CLOUDSUITE_CLIENT_DIR = ("{}/cloudsuite/memcached-bench").format(apps_dir)
 CLOUDSUITE_CLIENT_BIN = ("{}/memcached_client/loader").format(
 		CLOUDSUITE_CLIENT_DIR)
 CLOUDSUITE_CLIENT_DATASET = ("{}/twitter_dataset/"
-		"twitter_dataset_3x").format(CLOUDSUITE_CLIENT_DIR)
-		#"twitter_dataset_30x").format(CLOUDSUITE_CLIENT_DIR)
+		#"twitter_dataset_3x").format(CLOUDSUITE_CLIENT_DIR)
+		"twitter_dataset_30x").format(CLOUDSUITE_CLIENT_DIR)
 
 #POLL_PERIOD = 0
 POLL_PERIOD = 10
