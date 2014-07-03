@@ -28,13 +28,13 @@ if not test_manual:
 		firefox_app,
 		g500_omp_app,
 		helloworld_app,
-		kernelbuild_app,
 		memcached_app,
 		LAMP_mysql_app,
 		office_app,
 		python_app,
 		###helloworld_static_app,
 		###LAMP_memcached_app,
+		###kernelbuild_app,
 	]
 else:
 	from app_scripts.app_manual import *
