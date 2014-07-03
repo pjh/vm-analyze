@@ -6,7 +6,7 @@ from plotting.plot_components_ops import components_ops_plot
 from plotting.plot_components_vmas import components_vmas_plot
 from plotting.plot_vmacount import vmacount_ts_plot, vmacount_max_col_plot
 from plotting.plot_vmaops import *
-from plotting.plot_addrspace_sizes import vm_size_ts_plot, virt_phys_size_ts_plot, virt_phys_ratio_ts_plot, virt_phys_size_component_ts_plot, virt_phys_ratio_component_ts_plot
+from plotting.plot_addrspace_sizes import vm_size_ts_plot, virt_phys_size_ts_plot, virt_phys_ratio_ts_plot, virt_phys_size_component_ts_plot, virt_phys_ratio_component_ts_plot, virt_pte_size_ts_plot, virt_pte_ratio_ts_plot
 #from plotting.plot_perf_missrate import *
 from plotting.plot_perf_totals import new_totals_ts_plot, new_totals_col_plot
 from util.pjh_utils import *
@@ -18,14 +18,14 @@ point_in_time_plotlist = [
 		'os_overheads_plot',
 		'basepagesize_plot',
 		'max_vmas_plot',
-#		'vma_categories_plot',
+		#'vma_categories_plot',
 		'vma_size_cols_plot',
 		'vma_size_cdf_plot',
 		'vma_size_portion_plot',
 	]
 # For each point_in_time plot, plot it at each of these times:
 points_in_time = [
-#		'max_vma_count',
+		#'max_vma_count',
 		'max_vm_size',   # prefer this one
 	]
 
@@ -34,10 +34,10 @@ points_in_time = [
 analysis_plotlist = [
 		# Pure vma plots:
 		vmacount_ts_plot,
-		#vmacount_max_col_plot,
-		vmaops_all_plot,
-		vmaops_allocs_plot,
-		vmaops_frees_plot,
+		vmacount_max_col_plot,
+		#vmaops_all_plot,
+		#vmaops_allocs_plot,
+		#vmaops_frees_plot,
 		vmaops_resizes_plot,
 		#vmaops_relocations_plot,
 		vmaops_access_changes_plot,
@@ -48,8 +48,10 @@ analysis_plotlist = [
 		# PTE plots:
 		virt_phys_size_ts_plot,
 		virt_phys_ratio_ts_plot,
-		###virt_phys_size_component_ts_plot,  # causing chrome + kbuild errors??
-		###virt_phys_ratio_component_ts_plot, # causing chrome + kbuild errors??
+		#virt_pte_size_ts_plot,
+		#virt_pte_ratio_ts_plot,
+		#virt_phys_size_component_ts_plot,  # causing chrome + kbuild errors??
+		#virt_phys_ratio_component_ts_plot, # causing chrome + kbuild errors??
 
 		# Old plots:
 		###components_ops_plot,   # old
@@ -63,19 +65,19 @@ analysis_plotlist = [
 # used to create the new plot - the new plot method should only take
 # the event name as an argument, and return a multiapp_plot object.
 missrate_event_plots = [
-#		'dTLB-loads',
-#		'dTLB-stores',
-#		'iTLB-loads',
+		'dTLB-loads',
+		'dTLB-stores',
+		'iTLB-loads',
 	]
 totals_ts_plots = [
-#		'dTLB-loads',
-#		'dTLB-stores',
-#		'iTLB-loads',
+		#'dTLB-loads',
+		#'dTLB-stores',
+		#'iTLB-loads',
 	]
 totals_col_plots = [
-#		'dTLB-loads',
-#		'dTLB-stores',
-#		'iTLB-loads',
+		#'dTLB-loads',
+		#'dTLB-stores',
+		#'iTLB-loads',
 	]
 perf_plotlist = []  # list of tuples: (eventlist, method to create new plot)
 perf_plotlist.append((totals_ts_plots, new_totals_ts_plot))

@@ -597,6 +597,7 @@ sharedfile_label = 'SharedFile'
 guard_label = 'Guard'
 sharedlib_label = 'Libs'   #'SharedLib'
 normal_label = 'Normal'
+swap_label = 'Swapped'
 
 # The order of these categories is important for categories_plotfn():
 # the 0th element in this list will be the bottom of the stack or the
