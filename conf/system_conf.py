@@ -15,6 +15,7 @@ conf_dir        = "{}/conf".format(scripts_dir)
 apps_dir		= "{}/vmstudy-apps".format(repos_dir)
 data_dir        = "{}/vmstudy-data".format(repos_dir)
 LTRACE_DIR      = "{}/ltrace_outfiles".format(data_dir)
+appscripts_dir	= "{}/app_scripts".format(scripts_dir)
 
 suggested_tracebuf_size_kb = 512 * 1024
 

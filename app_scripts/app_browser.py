@@ -79,7 +79,7 @@ use_my_firefox = False
 
 # This script will attempt to navigate to all of the URLs that are
 # listed in this file.
-browser_urls = "{}/app_browser_urls_30.txt".format(conf_dir)
+browser_urls = "{}/app_browser_urls_30.txt".format(appscripts_dir)
 #browser_urls = None   # use "default urls"
 
 # Since there's no good way to determine when the page load has
