@@ -21,6 +21,7 @@ from app_scripts.app_to_run_class import *
 from trace.run_common import *
 from trace.traceinfo_class import traceinfo
 import app_scripts.ubuntu_services as ubuntu_services
+import app_scripts.app_memcached as memcached
 import signal
 
 # If USE_MANUAL_CLIENT is True, then the automated web browser will not
