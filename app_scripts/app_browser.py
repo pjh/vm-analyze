@@ -85,6 +85,11 @@ browser_urls = "{}/app_browser_urls_30.txt".format(conf_dir)
 #use_my_firefox = True
 use_my_firefox = False
 
+# This script will attempt to navigate to all of the URLs that are
+# listed in this file.
+browser_urls = "{}/app_browser_urls_30.txt".format(conf_dir)
+#browser_urls = None   # use "default urls"
+
 # Since there's no good way to determine when the page load has
 # completed, we'll wait for the specified timeout value for each page.
 # Actually, it looks like the selenium .get() method usually doesn't
