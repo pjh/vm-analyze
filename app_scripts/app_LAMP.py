@@ -289,10 +289,14 @@ def mediawiki_exec(outputdir, services, manualservice=None):
 		signal.signal(signal.SIGINT, signal.SIG_DFL)
 		success = True
 	else:
+		if len(service_pids) > 0:
+			tpid = service_pids[-1]
+		else:
+			tpid = -1234
 		print_error(tag, ("service-start or trace_on or run_client "
 			"returned failure; will just clean up and return now. "
 			"target_pids will be empty, but echo {} > target_pids "
-			"to analyze trace anyway").format(service_pids[-1]))
+			"to analyze trace anyway").format(tpid))
 
 	for i in range(len(services) - 1, -1, -1):
 		service = services[i]

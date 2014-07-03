@@ -96,6 +96,7 @@ PERF_REPORTFILE = 'perf.report'
 tracing_dir = "{}/tracing".format(sysconf.sys_debug_dir)
 #trace_buf_mb_per_core = 512       # per-CPU!
 trace_buf_mb_per_core = int(sysconf.suggested_tracebuf_size_kb / 1024)
+#trace_buf_mb_per_core = 10
 trace_clock          = 'local'
 trace_userstacks     = 0
 trace_userstack_syms = 0
@@ -110,7 +111,8 @@ trace_sched_switch   = 0
   # userstacktrace collection??
 trace_sched_fork     = 0
 trace_sys_mprotect   = 0
-all_cpus_prog = "{}/test-programs/all_cpus".format(sysconf.apps_dir)
+all_cpus_prog = "{}/test-programs/all_cpus {}".format(
+		sysconf.apps_dir, sysconf.num_hw_threads)
 
 tracefilename   = 'trace-events-full'
 
@@ -269,7 +271,7 @@ class traceinfo:
 		retcode = subprocess.call(args, stdout=null, stderr=null)
 		if retcode != 0:
 			print_error(tag, ("command {} returned non-zero code "
-				"{}").format(all_cpus_prog))
+				"{}").format(all_cpus_prog, retcode))
 			success = False
 		null.close()
 

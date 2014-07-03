@@ -30,6 +30,7 @@ RASTER_DPI = 400
   #       anon-rss: 24157144kB, file-rss:4kB
   #   500 DPI, with perf analysis: killed after 134m54.265s :(
   #   450 DPI, with perf analysis: ...
+  # 450 DPI: makes generals PDF document unwieldy, it seems... try 400
 
 # COLORS:
 #   https://github.com/jiffyclub/brewer2mpl
