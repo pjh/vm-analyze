@@ -8,6 +8,10 @@
 # done automatically by this script.
 #   Ensure that py_version is in your path.
 #   ...
+#   Run the firefox app script first, then copy its trace-events-full
+#     file and its target_pids file to match the locations specified
+#     by py_inputpids and py_inputfile below.
+#   
 #
 # Note: this script uses timeout features that were added to Python 3.3
 # (available in Ubuntu 13.04) - if this is a problem, they should be
@@ -18,15 +22,23 @@ from trace.run_common import *
 from trace.traceinfo_class import traceinfo
 
 py_version = 'python3.3'
-py_app_dir = "{}/pythonapp".format(apps_dir)
-py_scriptname = "{}/analyze_trace.py".format(py_app_dir)
-py_inputpids = "{}/chrome-target-pids".format(py_app_dir)
-py_inputfile = "{}/chrome-trace-events-full".format(py_app_dir)
+py_scriptname = "{}/analyze_trace.py".format(scripts_dir)
+	# Run the analyze_trace.py script in the vm-analyze repository
+	# directly; don't try to copy it to another location and run
+	# it from there, as it makes the module imports / dependencies
+	# too hard to deal with.
+py_app_dir = "{}/pythonapp".format(appscripts_dir)
+py_inputpids = "{}/ffox-target-pids".format(py_app_dir)
+py_inputfile = "{}/ffox-trace-events-full".format(py_app_dir)
 py_outputdir = py_app_dir
-py_cmd = ("{} {} -u -a chrome -p {} {} {}").format(py_version,
+py_cmd = ("{} {} -a ffox -p {} {} {}").format(py_version,
 		py_scriptname, py_inputpids, py_inputfile, py_outputdir)
-	# enable (or leave enabled) options that will require more memory:
-	# userstack processing, physical page events.
+	# Enable (or leave enabled) options that will require more memory:
+	# physical page events.
+	# As of 20140703, running analyze_trace.py on a 420 MB trace-events-full
+	# from a firefox run (visiting 30 websites) with Rss events enabled
+	# takes just over five minutes, with ~600 MB virtual and ~450 MB physical
+	# memory used during the analysis.
 
 poll_period = 10
 
@@ -40,22 +52,11 @@ poll_period = 10
 def run_py_script(outputdir, py_stdout, py_stderr, tracer):
 	tag = 'run_py_script'
 
-	# Make sure we can import other modules from the directory that
-	# this script is located in:
-	env = os.environ.copy()
-	try:
-		pypath = env['PYTHONPATH']
-	except KeyError:
-		pypath = ''
-	env['PYTHONPATH'] = os.getcwd() + ':' + pypath
-	print_debug(tag, ("set env['PYTHONPATH']={}").format(env['PYTHONPATH']))
-
 	# http://docs.python.org/3.2/library/subprocess.html
 	args = shlex.split(py_cmd)
 	print_debug(tag, ("executing py_cmd=\"{}\"").format(py_cmd))
 
-	py_p = subprocess.Popen(args, stdout=py_stdout, stderr=py_stderr,
-			env=env)
+	py_p = subprocess.Popen(args, stdout=py_stdout, stderr=py_stderr)
 	if not py_p:
 		print_error(tag, ("subprocess.Popen returned None; "
 			"py_cmd={}").format(py_cmd))
