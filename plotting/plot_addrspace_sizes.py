@@ -6,6 +6,7 @@ from plotting.multiapp_plot_class import *
 from util.pjh_utils import *
 from plotting.plots_common import *
 import trace.vm_common as vm
+from collections import defaultdict
 
 ##############################################################################
 # IMPORTANT: don't use any global / static variables here, otherwise
@@ -44,7 +45,7 @@ class vm_size_auxdata:
 	resize_unmaps_size = None
 
 	def __init__(self):
-		self.component_sizes = dict()
+		self.component_sizes = defaultdict(int)
 		self.resize_unmaps_outstanding = 0
 		self.resize_unmaps_size = 0
 	
@@ -91,12 +92,12 @@ def vm_size_resetfn(auxdata):
 	return
 
 # Note: vma may be none! i.e. for a PageEvent with a PTE that doesn't
-# have a linked vma.
+# have a linked vma, or an RssEvent.
 def determine_basic_components(vma, separate_components):
 	tag = 'determine_basic_components'
 
 	components = [TOTALKEY]
-	if separate_components:
+	if separate_components and vma:
 		#sharedobj = 'non-.so-file'
 		#if vma and vma.filename is not None:
 		#	if vma.filename == '':
@@ -114,6 +115,10 @@ def determine_basic_components(vma, separate_components):
 # Updates one or more component sizes kept in auxdata by adding or
 # subtracting size from the current size we track. It's ok for
 # size to be negative.
+# For RssEvents, add_or_sub should be 'set', and size should be the
+# mapping from RSS_TYPES to page counts. Otherwise, add_or_sub should
+# be 'add' or 'sub', and size must be the page size being added or
+# subtracted.
 # Returns a list of newpoints that are created: two for each component,
 # one for just the absolute size and one for the ratio...
 def update_component_sizes(components, auxdata, size, add_or_sub,
@@ -126,27 +131,45 @@ def update_component_sizes(components, auxdata, size, add_or_sub,
 			vp_component = "{}-{}".format(component, virt_or_phys)
 		else:
 			vp_component = "{}".format(virt_or_phys)
-		try:
-			if add_or_sub == 'add':
-				print_debug_sizes(("adding size {} to component_sizes["
-					"{}]={}").format(size, vp_component,
-					auxdata.component_sizes[vp_component]))
-				auxdata.component_sizes[vp_component] += size
+
+		# component_sizes is a defaultdict, so if a vp_component key
+		# has not been encountered yet, its entry will be initialized
+		# to 0 and then size will be added / subtracted.
+		if add_or_sub == 'add':
+			print_debug_sizes(("adding size {} to component_sizes["
+				"{}]={}").format(size, vp_component,
+				auxdata.component_sizes[vp_component]))
+			auxdata.component_sizes[vp_component] += size
+		elif add_or_sub == 'sub':
+			print_debug_sizes(("subtracting size {} from component_sizes["
+				"{}]={}").format(size, vp_component,
+				auxdata.component_sizes[vp_component]))
+			auxdata.component_sizes[vp_component] -= size
+		elif add_or_sub == 'set':
+			# This path added later for RssEvents:
+			if component == TOTALKEY:
+				# For now, we don't include swap in "total physical
+				# memory size."
+				rss_count = size['MM_FILEPAGES'] + size['MM_ANONPAGES']
+			elif component == vm.file_label:
+				rss_count = size['MM_FILEPAGES']
+			elif component == vm.anon_label:
+				rss_count = size['MM_ANONPAGES']
+			elif component == vm.swap_label:
+				rss_count = size['MM_SWAPENTS']
 			else:
-				print_debug_sizes(("subtracting size {} from component_sizes["
-					"{}]={}").format(size, vp_component,
-					auxdata.component_sizes[vp_component]))
-				auxdata.component_sizes[vp_component] -= size
-		except KeyError:
-			if add_or_sub == 'add':
-				print_debug_sizes(("setting size {} for component_sizes["
-					"{}]").format(size, vp_component))
-				auxdata.component_sizes[vp_component] = size
-			else:
-				print_unexpected(True, tag, ("vp_component {} "
-					"not encountered yet, now trying to {} {} "
-					"bytes from its component_size!").format(vp_component,
-					add_or_sub, size))
+				print_unexpected(True, tag, ("unexpected component {} "
+					"for add_or_sub={} (RssEvent)").format(
+					component, add_or_sub))
+			rss_size = rss_count * vm.PAGE_SIZE_BYTES
+			auxdata.component_sizes[vp_component] = rss_size
+			print_debug(tag, ("set component_sizes[{}] = {} [{}] from "
+				"RssEvent").format(vp_component, rss_size,
+				pretty_bytes(rss_size)))
+		else:
+			print_unexpected(True, tag, ("invalid add_or_sub="
+				"{}").format(add_or_sub))
+			return []
 
 		# Track maximum for each component as well (but for now, just print
 		# it out; there's not a great way to access it later...)
@@ -358,6 +381,17 @@ def update_phys_size(page_event, auxdata, do_ratio, separate_components):
 
 	return newpoints
 
+def update_rss_size(rss_event, auxdata, do_ratio, separate_components):
+	tag = 'update_rss_size'
+
+	components = [TOTALKEY]
+	if separate_components:
+		components += [vm.file_label, vm.anon_label, vm.swap_label]
+
+	newpoints = update_component_sizes(components, auxdata,
+		rss_event.rss_pages, 'set', PHYS, rss_event.timestamp, do_ratio)
+	return newpoints
+
 # If this page_event represents a real page alloc or free, then this method
 # updates the physical memory size maintained in auxdata and returns
 # a point with timestamp and count fields set. If this page_event does not
@@ -411,6 +445,17 @@ def update_ratios(auxdata, component, timestamp):
 	if virt_size != 0.0:  # is 0 equality comparison ok for floats in python?
 		nowratio = (phys_size / virt_size)
 		if nowratio > 1.0:
+			# Do we still expect this to happen now that we're using
+			# rss events instead of pte events for tracking resident
+			# physical pages? Unfortunately, yes - even (especially?
+			# in hello-world, there are 400ish events that cause us
+			# to calculate a ratio greater than 1 here. Half of these
+			# happen at the beginning of the trace, when there is
+			# exactly one virtual page accounted for but many physical
+			# pages.....
+			print_unexpected(False, tag, ("calculated ratio {} > 1.0 - "
+				"phys_size={}, virt_size={}").format(nowratio, phys_size,
+				virt_size))
 			nowratio = 1.0
 	else:
 		nowratio = 0.0
@@ -442,17 +487,21 @@ def size_datafn(auxdata, plot_event, tgid, currentapp, do_ratio,
 
 	# This method handles plot_events with *either* vma or page_event
 	# set - however, both should not be set at the same time!
-	if plot_event.vma and plot_event.page_event:
+	if (plot_event.vma and
+		(plot_event.page_event or plot_event.rss_event)):
 		print_warning(tag, ("got a plot_event with both vma and "
-			"page_event set - not handled by this datafn, is this "
-			"expected by ANY datafn?").format())
+			"page_event or rss_event set - not handled by this datafn, "
+			"is this expected by ANY datafn?").format())
 		return None
 
 	if plot_event.vma:
 		newpoints = update_vm_size(plot_event.vma, auxdata,
 			do_ratio, separate_components)
-	elif plot_event.page_event and not just_virt:
+	elif not just_virt and plot_event.page_event:
 		newpoints = update_phys_size(plot_event.page_event, auxdata,
+			do_ratio, separate_components)
+	elif not just_virt and plot_event.rss_event:
+		newpoints = update_rss_size(plot_event.rss_event, auxdata,
 			do_ratio, separate_components)
 	elif plot_event.cp_event:
 		point = new_cp_datapoint(plot_event)
@@ -582,9 +631,16 @@ def vm_ratio_ts_plotfn(seriesdict, plotname, workingdir):
 vm_size_ts_plot = multiapp_plot('vm-size-ts', vm_size_auxdata,
 		vm_size_ts_plotfn, vm_size_datafn, vm_size_resetfn)
 
+# Newer rss-event-based plots:
 virt_phys_size_ts_plot = multiapp_plot('virt-phys-size', vm_size_auxdata,
 		virt_phys_size_ts_plotfn, virt_phys_size_datafn, vm_size_resetfn)
 virt_phys_ratio_ts_plot = multiapp_plot('virt-phys-ratio', vm_size_auxdata,
+		vm_ratio_ts_plotfn, virt_phys_ratio_datafn, vm_size_resetfn)
+
+# Older PTE-event-based plots:
+virt_pte_size_ts_plot = multiapp_plot('virt-phys-size-pte', vm_size_auxdata,
+		virt_phys_size_ts_plotfn, virt_phys_size_datafn, vm_size_resetfn)
+virt_pte_ratio_ts_plot = multiapp_plot('virt-phys-ratio-pte', vm_size_auxdata,
 		vm_ratio_ts_plotfn, virt_phys_ratio_datafn, vm_size_resetfn)
 
 virt_phys_size_component_ts_plot = multiapp_plot(
