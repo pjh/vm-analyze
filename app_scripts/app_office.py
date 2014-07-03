@@ -12,6 +12,10 @@
 #   Ensure that other commands and directories below are set correctly.
 #   Ensure that xdotool is installed and is in your PATH.
 #   ...
+#  - FIRST: run this once manually and make sure that if a prompt comes
+#    up asking you if you'd like to save in openoffice format instead
+#    of microsoft format, then you check the box to disable this box
+#    from appearing again (during automatic execution of this script)!
 
 from app_scripts.app_to_run_class import *
 from trace.run_common import *

@@ -467,14 +467,20 @@ def plot_scatter_lineplot(plotdict, title, x_axislabel, y_axislabel,
 			# Scatter plot:
 			#   http://matplotlib.org/api/pyplot_api.html#matplotlib.
 			#   pyplot.scatter
-			# We really want to just visualize the line between scatter
-			# points and ignore the individual points themselves...
-			try:
-				r = ts_kwargs['rasterized']
-				#print_debug(tag, ("rasterized={}").format(r))
-			except KeyError:
-				print_unexpected(True, tag, ("rasterized not set "
-					"in ts_kwargs"))
+			# Rasterization: for smallest file sizes (and easiest PDF
+			# viewing + printing), I think we want to rasterize the
+			# time series plots, but keep the normal line plots as
+			# vectors.
+#			try:
+#				r = ts_kwargs['rasterized']
+#				#print_debug(tag, ("rasterized={}").format(r))
+#			except KeyError:
+#				print_unexpected(True, tag, ("rasterized not set "
+#					"in ts_kwargs"))
+			if is_timeseries:
+				ts_kwargs['rasterized'] = True
+			else:
+				ts_kwargs['rasterized'] = False
 			ax.plot(xvals, yvals,
 					label=seriesname,
 					drawstyle=drawstyle,
@@ -658,7 +664,7 @@ def plot_scatter_lineplot(plotdict, title, x_axislabel, y_axislabel,
 			  # done anything recently that should affect the number of
 			  # points that kbuild is plotting.
 			  # Some further investigation reveals that this exception
-			  # is thron from the matplotlib rasterization code - for
+			  # is thrown from the matplotlib rasterization code - for
 			  # now, decrease DPI from 400 to 300 to make it go away
 			  # (but 400 DPI did work for a few runs for building
 			  # allplots a couple days ago...).
@@ -724,7 +730,7 @@ def plot_scatter_lineplot(plotdict, title, x_axislabel, y_axislabel,
 	ylabel_kwargs['rotation'] = 'vertical'
 	xpos = 0.033
 	ypos = 0.5     # vertically centered
-	ylabel_Text = fig.text(xpos, ypos, y_axislabel_withunits, **ylabel_kwargs)
+	ylabel_text = fig.text(xpos, ypos, y_axislabel_withunits, **ylabel_kwargs)
 
 	return fig
 
