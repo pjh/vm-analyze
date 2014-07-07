@@ -6,7 +6,7 @@ from plotting.plot_components_ops import components_ops_plot
 from plotting.plot_components_vmas import components_vmas_plot
 from plotting.plot_vmacount import vmacount_ts_plot, vmacount_max_col_plot
 from plotting.plot_vmaops import *
-from plotting.plot_addrspace_sizes import vm_size_ts_plot, virt_phys_size_ts_plot, virt_phys_ratio_ts_plot, virt_phys_size_component_ts_plot, virt_phys_ratio_component_ts_plot, virt_pte_size_ts_plot, virt_pte_ratio_ts_plot
+from plotting.plot_addrspace_sizes import vm_size_ts_plot, virt_phys_size_ts_plot, virt_phys_ratio_ts_plot, virt_phys_size_component_ts_plot, virt_phys_ratio_component_ts_plot, virt_pte_size_ts_plot, virt_pte_ratio_ts_plot, virt_phys_diff_ts_plot
 #from plotting.plot_perf_missrate import *
 from plotting.plot_perf_totals import new_totals_ts_plot, new_totals_col_plot
 from util.pjh_utils import *
@@ -48,6 +48,7 @@ analysis_plotlist = [
 		# PTE plots:
 		virt_phys_size_ts_plot,
 		virt_phys_ratio_ts_plot,
+		virt_phys_diff_ts_plot,
 		#virt_pte_size_ts_plot,
 		#virt_pte_ratio_ts_plot,
 		#virt_phys_size_component_ts_plot,  # causing chrome + kbuild errors??

@@ -25,10 +25,6 @@ if not SCALE:
 else:
 	SCALE_LABEL = SCALE_TO_LABEL[SCALE]
 
-VIRT = 'virt'
-PHYS = 'phys'
-RATIO = 'ratio'
-
 def print_debug_sizes(msg):
 	if False:
 		print_debug("SIZES", msg)
@@ -122,7 +118,7 @@ def determine_basic_components(vma, separate_components):
 # Returns a list of newpoints that are created: two for each component,
 # one for just the absolute size and one for the ratio...
 def update_component_sizes(components, auxdata, size, add_or_sub,
-		virt_or_phys, timestamp, do_ratio):
+		virt_or_phys, timestamp, do_ratio, do_difference=False):
 	tag = 'update_component_sizes'
 
 	newpoints = []
@@ -215,16 +211,17 @@ def update_component_sizes(components, auxdata, size, add_or_sub,
 					auxdata.component_sizes[maxcomp] = (
 							auxdata.component_sizes[vp_component])
 
-		# One point for the standard component:
-		if not do_ratio:
+		if do_ratio or do_difference:
+			# One point for the ratio:
+			point = update_ratios(auxdata, component, timestamp,
+					do_difference)
+			newpoints.append(point)
+		else:
+			# One point for the standard component:
 			point = datapoint()
 			point.timestamp = timestamp
 			point.count = auxdata.component_sizes[vp_component]
 			point.component = vp_component
-			newpoints.append(point)
-		else:
-			# One point for the ratio:
-			point = update_ratios(auxdata, component, timestamp)
 			newpoints.append(point)
 
 	debug_vmsize(tag, '')
@@ -234,7 +231,8 @@ def update_component_sizes(components, auxdata, size, add_or_sub,
 # method updates the vm size maintained in auxdata and returns a
 # point with timestamp and count fields set. If this vma does not
 # actually represent a new alloc or free, then None is returned.
-def update_vm_size(vma, auxdata, do_ratio, separate_components):
+def update_vm_size(vma, auxdata, do_ratio, separate_components,
+		do_difference=False):
 	tag = 'update_vm_size'
 
 	#debug_vmsize(tag, None, ("total_vm_size    - got vma {}").format(
@@ -289,7 +287,8 @@ def update_vm_size(vma, auxdata, do_ratio, separate_components):
 		#print_debug_sizes(("vma alloc, filename={}, size={}").format(
 		#	vma.filename, vma.length))
 		newpoints = update_component_sizes(components, auxdata,
-				vma.length, 'add', VIRT, vma.timestamp, do_ratio)
+				vma.length, 'add', vm.VIRT_LABEL, vma.timestamp,
+				do_ratio, do_difference)
 	elif vma.vma_op == 'resize' and not vma.is_unmapped:
 		if HIDE_RESIZES:
 			size = auxdata.resize_remap(vma.length)
@@ -305,7 +304,8 @@ def update_vm_size(vma, auxdata, do_ratio, separate_components):
 			# update_component_sizes() should work ok even if size
 			# is negative with 'add'.
 			newpoints = update_component_sizes(components, auxdata,
-					size, 'add', VIRT, vma.timestamp, do_ratio)
+					size, 'add', vm.VIRT_LABEL, vma.timestamp,
+					do_ratio, do_difference)
 		else:
 			newpoints = []
 
@@ -321,8 +321,9 @@ def update_vm_size(vma, auxdata, do_ratio, separate_components):
 		else:
 			# Same as unmapped-free case below.
 			newpoints = update_component_sizes(components, auxdata,
-					vma.length, 'sub', VIRT, vma.unmap_timestamp, do_ratio)
-	elif (vma.is_unmapped and 
+					vma.length, 'sub', vm.VIRT_LABEL, vma.unmap_timestamp,
+					do_ratio, do_difference)
+	elif (vma.is_unmapped and
 		  (vma.unmap_op == 'free' or vma.unmap_op == 'access_change')):
 		# Explicit free of this vma (no matter the operation that
 		# allocated it (most recently operated on it)), OR an
@@ -333,7 +334,8 @@ def update_vm_size(vma, auxdata, do_ratio, separate_components):
 		#print_debug_sizes(("vma free, filename={}, size={}").format(
 		#	vma.filename, vma.length))
 		newpoints = update_component_sizes(components, auxdata,
-				vma.length, 'sub', VIRT, vma.unmap_timestamp, do_ratio)
+				vma.length, 'sub', vm.VIRT_LABEL, vma.unmap_timestamp,
+				do_ratio, do_difference)
 	else:
 		newpoints = []
 
@@ -370,18 +372,19 @@ def update_phys_size(page_event, auxdata, do_ratio, separate_components):
 		print_debug_sizes(("page unmap, filename={}, size={}").format(
 			filename, page_event.pte.pagesize))
 		newpoints = update_component_sizes(components, auxdata,
-				page_event.pte.pagesize, 'sub', PHYS,
+				page_event.pte.pagesize, 'sub', vm.PHYS_LABEL,
 				page_event.timestamp, do_ratio)
 	else:
 		print_debug_sizes(("page map, filename={}, size={}").format(
 			filename, page_event.pte.pagesize))
 		newpoints = update_component_sizes(components, auxdata,
-				page_event.pte.pagesize, 'add', PHYS,
+				page_event.pte.pagesize, 'add', vm.PHYS_LABEL,
 				page_event.timestamp, do_ratio)
 
 	return newpoints
 
-def update_rss_size(rss_event, auxdata, do_ratio, separate_components):
+def update_rss_size(rss_event, auxdata, do_ratio, separate_components,
+		do_difference):
 	tag = 'update_rss_size'
 
 	components = [TOTALKEY]
@@ -389,7 +392,8 @@ def update_rss_size(rss_event, auxdata, do_ratio, separate_components):
 		components += [vm.file_label, vm.anon_label, vm.swap_label]
 
 	newpoints = update_component_sizes(components, auxdata,
-		rss_event.rss_pages, 'set', PHYS, rss_event.timestamp, do_ratio)
+		rss_event.rss_pages, 'set', vm.PHYS_LABEL, rss_event.timestamp,
+		do_ratio, do_difference)
 	return newpoints
 
 # If this page_event represents a real page alloc or free, then this method
@@ -420,18 +424,21 @@ def update_phys_size_old(page_event, auxdata, components, separate_components):
 
 	return point
 
-def update_ratios(auxdata, component, timestamp):
+def update_ratios(auxdata, component, timestamp, do_difference):
 	tag = 'update_ratios'
 
 	if component == TOTALKEY:
-		virt_component  = "{}".format(VIRT)
-		phys_component  = "{}".format(PHYS)
-		ratio_component = "{}".format(RATIO)
+		virt_component  = "{}".format(vm.VIRT_LABEL)
+		phys_component  = "{}".format(vm.PHYS_LABEL)
+		ratio_component = "{}".format(vm.RATIO_LABEL)
+		diff_component  = "{}".format(vm.DIFFERENCE_LABEL)
 	else:		
-		virt_component  = "{}-{}".format(component, VIRT)
-		phys_component  = "{}-{}".format(component, PHYS)
-		ratio_component = "{}-{}".format(component, RATIO)
+		virt_component  = "{}-{}".format(component, vm.VIRT_LABEL)
+		phys_component  = "{}-{}".format(component, vm.PHYS_LABEL)
+		ratio_component = "{}-{}".format(component, vm.RATIO_LABEL)
+		diff_component  = "{}-{}".format(component, vm.DIFFERENCE_LABEL)
 	ratio_max = "{}-max".format(ratio_component)
+	diff_max  = "{}-max".format(diff_component)
 
 	try:
 		virt_size = auxdata.component_sizes[virt_component]
@@ -441,38 +448,58 @@ def update_ratios(auxdata, component, timestamp):
 		phys_size = auxdata.component_sizes[phys_component]
 	except KeyError:
 		phys_size = 0.0
-	
-	if virt_size != 0.0:  # is 0 equality comparison ok for floats in python?
-		nowratio = (phys_size / virt_size)
-		if nowratio > 1.0:
-			# Do we still expect this to happen now that we're using
-			# rss events instead of pte events for tracking resident
-			# physical pages? Unfortunately, yes - even (especially?
-			# in hello-world, there are 400ish events that cause us
-			# to calculate a ratio greater than 1 here. Half of these
-			# happen at the beginning of the trace, when there is
-			# exactly one virtual page accounted for but many physical
-			# pages.....
-			print_unexpected(False, tag, ("calculated ratio {} > 1.0 - "
-				"phys_size={}, virt_size={}").format(nowratio, phys_size,
-				virt_size))
-			nowratio = 1.0
-	else:
-		nowratio = 0.0
-	
-	try:
-		maxratio = auxdata.component_sizes[ratio_max]
-	except KeyError:
-		maxratio = -0.1
-	if nowratio > maxratio:
-		auxdata.component_sizes[ratio_max] = nowratio
-		#print_debug(tag, ("new max: {}: {}: {}").format(timestamp,
-		#	ratio_max, nowratio))
 
 	point = datapoint()
 	point.timestamp = timestamp
-	point.count = nowratio
-	point.component = ratio_component
+
+	if do_difference:
+		diff_size = float(virt_size) - float(phys_size)
+		if diff_size < 0.0:
+			print_unexpected(False, tag, ("calculated negative "
+				"difference between virt_size={} and phys_size={}: "
+				"{} ({})").format(pretty_bytes(virt_size),
+				pretty_bytes(phys_size), pretty_bytes(diff_size),
+				diff_size))
+			diff_size = 0.0
+		try:
+			maxdiff = auxdata.component_sizes[diff_max]
+		except KeyError:
+			maxdiff = -0.1
+		if diff_size > maxdiff:
+			auxdata.component_sizes[diff_max] = diff_size
+			#print_debug(tag, ("new max diff size: {}: {}: {}").format(
+			#	timestamp, maxdiff, diff_size))
+		point.count = maxdiff
+		point.component = diff_component
+	else:
+		if virt_size != 0.0:  # is == 0 comparison ok for floats in python?
+			nowratio = (phys_size / virt_size)
+			if nowratio > 1.0:
+				# Do we still expect this to happen now that we're using
+				# rss events instead of pte events for tracking resident
+				# physical pages? Unfortunately, yes - even (especially?
+				# in hello-world, there are 400ish events that cause us
+				# to calculate a ratio greater than 1 here. Half of these
+				# happen at the beginning of the trace, when there is
+				# exactly one virtual page accounted for but many physical
+				# pages.....
+				print_unexpected(False, tag, ("calculated ratio {} > 1.0 - "
+					"phys_size={}, virt_size={}").format(nowratio, phys_size,
+					virt_size))
+				nowratio = 1.0
+		else:
+			nowratio = 0.0
+
+		try:
+			maxratio = auxdata.component_sizes[ratio_max]
+		except KeyError:
+			maxratio = -0.1
+		if nowratio > maxratio:
+			auxdata.component_sizes[ratio_max] = nowratio
+			#print_debug(tag, ("new max: {}: {}: {}").format(timestamp,
+			#	ratio_max, nowratio))
+		point.count = nowratio
+		point.component = ratio_component
 	
 	return point
 
@@ -482,7 +509,7 @@ def update_ratios(auxdata, component, timestamp):
 # you may want to modify the other.
 # Note: currentapp may be None, e.g. for checkpoints!
 def size_datafn(auxdata, plot_event, tgid, currentapp, do_ratio,
-		separate_components, just_virt):
+		separate_components, just_virt, do_difference=False):
 	tag = 'size_datafn'
 
 	# This method handles plot_events with *either* vma or page_event
@@ -496,13 +523,13 @@ def size_datafn(auxdata, plot_event, tgid, currentapp, do_ratio,
 
 	if plot_event.vma:
 		newpoints = update_vm_size(plot_event.vma, auxdata,
-			do_ratio, separate_components)
+			do_ratio, separate_components, do_difference)
 	elif not just_virt and plot_event.page_event:
 		newpoints = update_phys_size(plot_event.page_event, auxdata,
 			do_ratio, separate_components)
 	elif not just_virt and plot_event.rss_event:
 		newpoints = update_rss_size(plot_event.rss_event, auxdata,
-			do_ratio, separate_components)
+			do_ratio, separate_components, do_difference)
 	elif plot_event.cp_event:
 		point = new_cp_datapoint(plot_event)
 		seriesname = "{}".format(CP_SERIESNAME)
@@ -522,7 +549,8 @@ def size_datafn(auxdata, plot_event, tgid, currentapp, do_ratio,
 		for p in newpoints:
 			# In order to get colors right, set seriesname to just the
 			# appname for the "main" or "only" line in the plot:
-			if just_virt or p.component == RATIO:
+			if (just_virt or p.component == vm.RATIO_LABEL
+				or p.component == vm.DIFFERENCE_LABEL):
 				seriesname = "{}".format(currentapp)
 			else:
 				seriesname = "{}-{}".format(currentapp, p.component)
@@ -541,6 +569,11 @@ def virt_phys_size_datafn(auxdata, plot_event, tgid, currentapp):
 	return size_datafn(auxdata, plot_event, tgid, currentapp,
 			do_ratio=False, separate_components=False,
 			just_virt=False)
+
+def virt_phys_diff_datafn(auxdata, plot_event, tgid, currentapp):
+	return size_datafn(auxdata, plot_event, tgid, currentapp,
+			do_ratio=False, separate_components=False,
+			just_virt=False, do_difference=True)
 
 def virt_phys_ratio_datafn(auxdata, plot_event, tgid, currentapp):
 	return size_datafn(auxdata, plot_event, tgid, currentapp,
@@ -579,6 +612,19 @@ def virt_phys_size_ts_plotfn(seriesdict, plotname, workingdir):
 
 	title = 'Total virtual memory and resident physical memory'
 	yaxis = "Total size ({})".format(SCALE_LABEL)
+
+	return size_ts_plotfn(seriesdict, plotname, title, yaxis, ysplits)
+
+def virt_phys_diff_ts_plotfn(seriesdict, plotname, workingdir):
+	tag = 'virt_phys_diff_ts_plotfn'
+
+	ysplits = None
+	#ysplits = [1, 5, 10]
+
+	#title = ('Difference between allocated virtual memory and '
+	#	'resident physical memory')
+	title = ('Amount of non-resident virtual memory')
+	yaxis = "Size ({})".format(SCALE_LABEL)
 
 	return size_ts_plotfn(seriesdict, plotname, title, yaxis, ysplits)
 
@@ -636,6 +682,8 @@ virt_phys_size_ts_plot = multiapp_plot('virt-phys-size', vm_size_auxdata,
 		virt_phys_size_ts_plotfn, virt_phys_size_datafn, vm_size_resetfn)
 virt_phys_ratio_ts_plot = multiapp_plot('virt-phys-ratio', vm_size_auxdata,
 		vm_ratio_ts_plotfn, virt_phys_ratio_datafn, vm_size_resetfn)
+virt_phys_diff_ts_plot = multiapp_plot('virt-phys-diff', vm_size_auxdata,
+		virt_phys_diff_ts_plotfn, virt_phys_diff_datafn, vm_size_resetfn)
 
 # Older PTE-event-based plots:
 virt_pte_size_ts_plot = multiapp_plot('virt-phys-size-pte', vm_size_auxdata,
