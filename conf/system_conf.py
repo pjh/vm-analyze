@@ -18,6 +18,7 @@ LTRACE_DIR      = "{}/ltrace_outfiles".format(data_dir)
 appscripts_dir	= "{}/app_scripts".format(scripts_dir)
 
 suggested_tracebuf_size_kb = 512 * 1024
+num_hw_threads = 2
 
 trace_user = 'pjh'
 trace_group = 'pjh'
