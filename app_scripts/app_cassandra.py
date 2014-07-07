@@ -3,6 +3,22 @@
 # Copyright (c) 2012-2014 Peter Hornyack and University of Washington
 
 # Cassandra, exercised using YCSB.
+#
+# Steps to set up:
+#   - ...
+#
+# If this app script fails for some reason, try running these steps manually
+# to get things un-stuck:
+#   rm -rf /var/lib/cassandra
+#   sudo /scratch/pjh/vmstudy-apps/cassandra/bin/cassandra -f
+#     (this sometimes seems to need extra time to start up, which may be
+#     what's causing the script to fail...)
+#   /scratch/pjh/vmstudy-apps/cassandra/bin/cqlsh --file=/scratch/pjh/vmstudy-data/run/latest/cass/cqlsh-init-usertable localhost
+#     (may need to run twice, until non-zero error code returned)
+#   Kill the cassandra process
+#   util/reset_cassandras.sh
+#     (just to be sure)
+#   Then try running the app script again.
 # 
 # Cassandra is a java application; it runs in a single process with many
 # (e.g. 30+) threads. Its command line looks like this:
@@ -50,7 +66,7 @@ ycsb_dbname        = 'cassandra-10'
   # of retries apparently) and then re-built ycsb, but I'm not sure
   # that is/was necessary. Stick with vanilla ycsb and the most recent
   # cassandra client.
-cass_startuptime   = 12   # 12 seems to suffice...
+cass_startuptime   = 15   # 12 seems to suffice...
 
 ##############################################################################
 # YCSB #

@@ -58,6 +58,11 @@ SEGMENT_OPS = [
 	'resize',
 	]
 
+VIRT_LABEL = 'virt'
+PHYS_LABEL = 'phys'
+RATIO_LABEL = 'ratio'
+DIFFERENCE_LABEL = 'diff'
+
 def is_multiple_of_page_size(bytes_):
 	if bytes_ % PAGE_SIZE_BYTES == 0:
 		return True

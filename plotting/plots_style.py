@@ -5,6 +5,7 @@
 import brewer2mpl
 import itertools
 import sys
+import trace.vm_common as vm
 from util.pjh_utils import *
 
 RASTER_DPI = 400
@@ -300,6 +301,16 @@ other_kwargs = {
 		#'marker'	: 'o',
 		'linewidth'	: LINEWIDTH
 	}
+virt_kwargs = {   # virtual memory timeseries lines
+		'color'		: brewer_blue,
+		'linestyle'	: '-',
+		'linewidth'	: LINEWIDTH
+	}
+phys_kwargs = {   # physical memory timeseries lines
+		'color'		: brewer_red,
+		'dashes'	: dash_long_seq,
+		'linewidth'	: LINEWIDTH
+	}
 appname_to_line_kwargs = {
 		'apache'		: apache_kwargs,
 		'cass'			: cass_kwargs,
@@ -329,13 +340,21 @@ appname_to_line_kwargs = {
 def appname_to_kwargs(appname):
 	tag = 'appname_to_kwargs'
 	try:
+		app_kwargs = appname_to_line_kwargs[appname]
 		print_debug(tag, ("found kwargs for appname={}").format(
 			appname))
-		app_kwargs = appname_to_line_kwargs[appname]
 	except KeyError:
-		print_warning(tag, ("no kwargs found for appname={}, using "
-			"\"other\" kwargs").format(appname))
-		app_kwargs = other_kwargs
+		# If appname / series label ends in "-virt" or "-phys" (i.e.
+		# for resident-physical-memory plots), use specific kwargs for
+		# those lines.
+		if "-{}".format(vm.VIRT_LABEL) in appname:
+			app_kwargs = virt_kwargs
+		elif "-{}".format(vm.PHYS_LABEL) in appname:
+			app_kwargs = phys_kwargs
+		else:
+			print_warning(tag, ("no kwargs found for appname={}, using "
+				"\"other\" kwargs").format(appname))
+			app_kwargs = other_kwargs
 	return app_kwargs.copy()
 
 ##############################################################################
