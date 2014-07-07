@@ -11,7 +11,7 @@ from analyze.process_group_class import *
 from conf.system_conf import *
 from analyze.vm_mapping_class import *
 import plotting.multiapp_plot_class as multiapp_plot
-import conf.PlotList
+import conf.PlotList as PlotList
 import plotting.plots_common as plots
 import trace.traceinfo_class as traceinfo
 

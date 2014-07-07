@@ -121,6 +121,10 @@ def update_component_sizes(components, auxdata, size, add_or_sub,
 		virt_or_phys, timestamp, do_ratio, do_difference=False):
 	tag = 'update_component_sizes'
 
+	#print_debug(tag, ("entered: add_or_sub={}, virt_or_phys={}, "
+	#	"components={}, do_difference={}").format(add_or_sub, virt_or_phys,
+	#	components, do_difference))
+
 	newpoints = []
 	for component in components:
 		if component != TOTALKEY:
@@ -159,8 +163,8 @@ def update_component_sizes(components, auxdata, size, add_or_sub,
 					component, add_or_sub))
 			rss_size = rss_count * vm.PAGE_SIZE_BYTES
 			auxdata.component_sizes[vp_component] = rss_size
-			print_debug(tag, ("set component_sizes[{}] = {} [{}] from "
-				"RssEvent").format(vp_component, rss_size,
+			print_debug_sizes(tag, ("set component_sizes[{}] = {} [{}] "
+				"from RssEvent").format(vp_component, rss_size,
 				pretty_bytes(rss_size)))
 		else:
 			print_unexpected(True, tag, ("invalid add_or_sub="
@@ -177,8 +181,8 @@ def update_component_sizes(components, auxdata, size, add_or_sub,
 			maxsize = -1
 		if nowsize > maxsize:
 			auxdata.component_sizes[max_component] = nowsize
-			#print_debug(tag, ("new max: {}: {}: {}").format(timestamp,
-			#	max_component, pretty_bytes(nowsize)))
+			print_debug(tag, ("new max: {}: {}: {}").format(timestamp,
+				max_component, pretty_bytes(nowsize)))
 
 		print_debug_sizes(("component_sizes[{}] = {}").format(
 			vp_component, auxdata.component_sizes[vp_component]))
@@ -191,7 +195,7 @@ def update_component_sizes(components, auxdata, size, add_or_sub,
 				timestamp, auxdata.component_sizes))
 
 		# debugging:
-		if vp_component == 'total-virt':
+		if False and vp_component == 'total-virt':
 			debug_vmsize(tag, ("total_vm_size={}").format(
 				pretty_bytes(auxdata.component_sizes[vp_component])))
 			maxcomp = 'total-virt-max'
@@ -461,6 +465,9 @@ def update_ratios(auxdata, component, timestamp, do_difference):
 				pretty_bytes(phys_size), pretty_bytes(diff_size),
 				diff_size))
 			diff_size = 0.0
+		#print_debug(tag, ("do_difference: virt_size={}, phys_size={}, "
+		#	"diff_size={}").format(pretty_bytes(virt_size),
+		#	pretty_bytes(phys_size), pretty_bytes(diff_size)))
 		try:
 			maxdiff = auxdata.component_sizes[diff_max]
 		except KeyError:
@@ -469,7 +476,7 @@ def update_ratios(auxdata, component, timestamp, do_difference):
 			auxdata.component_sizes[diff_max] = diff_size
 			#print_debug(tag, ("new max diff size: {}: {}: {}").format(
 			#	timestamp, maxdiff, diff_size))
-		point.count = maxdiff
+		point.count = diff_size
 		point.component = diff_component
 	else:
 		if virt_size != 0.0:  # is == 0 comparison ok for floats in python?
@@ -489,6 +496,9 @@ def update_ratios(auxdata, component, timestamp, do_difference):
 				nowratio = 1.0
 		else:
 			nowratio = 0.0
+		#print_debug(tag, ("do_ratio: virt_size={}, phys_size={}, "
+		#	"nowratio={}").format(pretty_bytes(virt_size),
+		#	pretty_bytes(phys_size), nowratio))
 
 		try:
 			maxratio = auxdata.component_sizes[ratio_max]
