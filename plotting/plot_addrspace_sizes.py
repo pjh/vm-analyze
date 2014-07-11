@@ -163,7 +163,7 @@ def update_component_sizes(components, auxdata, size, add_or_sub,
 					component, add_or_sub))
 			rss_size = rss_count * vm.PAGE_SIZE_BYTES
 			auxdata.component_sizes[vp_component] = rss_size
-			print_debug_sizes(tag, ("set component_sizes[{}] = {} [{}] "
+			print_debug_sizes(("set component_sizes[{}] = {} [{}] "
 				"from RssEvent").format(vp_component, rss_size,
 				pretty_bytes(rss_size)))
 		else:
@@ -517,9 +517,11 @@ def update_ratios(auxdata, component, timestamp, do_difference):
 
 # This method is very similar to vmacount_datafn - if you modify one,
 # you may want to modify the other.
+# virt_or_phys: set to 'virt' to ignore rss events, 'phys' to only care
+# about rss events, or 'both' for both.
 # Note: currentapp may be None, e.g. for checkpoints!
 def size_datafn(auxdata, plot_event, tgid, currentapp, do_ratio,
-		separate_components, just_virt, do_difference=False):
+		separate_components, virt_or_phys, do_difference=False):
 	tag = 'size_datafn'
 
 	# This method handles plot_events with *either* vma or page_event
@@ -531,13 +533,13 @@ def size_datafn(auxdata, plot_event, tgid, currentapp, do_ratio,
 			"is this expected by ANY datafn?").format())
 		return None
 
-	if plot_event.vma:
+	if virt_or_phys != 'phys' and plot_event.vma:
 		newpoints = update_vm_size(plot_event.vma, auxdata,
 			do_ratio, separate_components, do_difference)
-	elif not just_virt and plot_event.page_event:
+	elif virt_or_phys != 'virt' and plot_event.page_event:
 		newpoints = update_phys_size(plot_event.page_event, auxdata,
 			do_ratio, separate_components)
-	elif not just_virt and plot_event.rss_event:
+	elif virt_or_phys != 'virt' and plot_event.rss_event:
 		newpoints = update_rss_size(plot_event.rss_event, auxdata,
 			do_ratio, separate_components, do_difference)
 	elif plot_event.cp_event:
@@ -559,7 +561,7 @@ def size_datafn(auxdata, plot_event, tgid, currentapp, do_ratio,
 		for p in newpoints:
 			# In order to get colors right, set seriesname to just the
 			# appname for the "main" or "only" line in the plot:
-			if (just_virt or p.component == vm.RATIO_LABEL
+			if (virt_or_phys != 'both' or p.component == vm.RATIO_LABEL
 				or p.component == vm.DIFFERENCE_LABEL):
 				seriesname = "{}".format(currentapp)
 			else:
@@ -573,32 +575,37 @@ def size_datafn(auxdata, plot_event, tgid, currentapp, do_ratio,
 def vm_size_datafn(auxdata, plot_event, tgid, currentapp):
 	return size_datafn(auxdata, plot_event, tgid, currentapp,
 			do_ratio=False, separate_components=False,
-			just_virt=True)
+			virt_or_phys='virt')
+
+def resident_datafn(auxdata, plot_event, tgid, currentapp):
+	return size_datafn(auxdata, plot_event, tgid, currentapp,
+			do_ratio=False, separate_components=False,
+			virt_or_phys='phys')
 
 def virt_phys_size_datafn(auxdata, plot_event, tgid, currentapp):
 	return size_datafn(auxdata, plot_event, tgid, currentapp,
 			do_ratio=False, separate_components=False,
-			just_virt=False)
+			virt_or_phys='both')
 
 def virt_phys_diff_datafn(auxdata, plot_event, tgid, currentapp):
 	return size_datafn(auxdata, plot_event, tgid, currentapp,
 			do_ratio=False, separate_components=False,
-			just_virt=False, do_difference=True)
+			virt_or_phys='both', do_difference=True)
 
 def virt_phys_ratio_datafn(auxdata, plot_event, tgid, currentapp):
 	return size_datafn(auxdata, plot_event, tgid, currentapp,
 			do_ratio=True, separate_components=False,
-			just_virt=False)
+			virt_or_phys='both')
 
 def virt_phys_size_component_datafn(auxdata, plot_event, tgid, currentapp):
 	return size_datafn(auxdata, plot_event, tgid, currentapp,
 			do_ratio=False, separate_components=True,
-			just_virt=False)
+			virt_or_phys='both')
 
 def virt_phys_ratio_component_datafn(auxdata, plot_event, tgid, currentapp):
 	return size_datafn(auxdata, plot_event, tgid, currentapp,
 			do_ratio=True, separate_components=True,
-			just_virt=False)
+			virt_or_phys='both')
 
 ##############################################################################
 
@@ -610,6 +617,18 @@ def vm_size_ts_plotfn(seriesdict, plotname, workingdir):
 
 	title = 'Total VM size over time'
 	yaxis = "Total size of mapped virtual address space ({})".format(
+			SCALE_LABEL)
+
+	return size_ts_plotfn(seriesdict, plotname, title, yaxis, ysplits)
+
+def resident_ts_plotfn(seriesdict, plotname, workingdir):
+	tag = 'resident_ts_plotfn'
+
+	#ysplits = None
+	ysplits = [1, 3]
+
+	title = 'Resident physical memory over time'
+	yaxis = "Amount of resident physical memory ({})".format(
 			SCALE_LABEL)
 
 	return size_ts_plotfn(seriesdict, plotname, title, yaxis, ysplits)
@@ -628,8 +647,8 @@ def virt_phys_size_ts_plotfn(seriesdict, plotname, workingdir):
 def virt_phys_diff_ts_plotfn(seriesdict, plotname, workingdir):
 	tag = 'virt_phys_diff_ts_plotfn'
 
-	ysplits = None
-	#ysplits = [1, 5, 10]
+	#ysplits = None
+	ysplits = [0.5, 2]
 
 	#title = ('Difference between allocated virtual memory and '
 	#	'resident physical memory')
@@ -686,6 +705,8 @@ def vm_ratio_ts_plotfn(seriesdict, plotname, workingdir):
 
 vm_size_ts_plot = multiapp_plot('vm-size-ts', vm_size_auxdata,
 		vm_size_ts_plotfn, vm_size_datafn, vm_size_resetfn)
+resident_ts_plot = multiapp_plot('resident-ts', vm_size_auxdata,
+		resident_ts_plotfn, resident_datafn, vm_size_resetfn)
 
 # Newer rss-event-based plots:
 virt_phys_size_ts_plot = multiapp_plot('virt-phys-size', vm_size_auxdata,
