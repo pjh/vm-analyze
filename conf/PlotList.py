@@ -6,7 +6,7 @@ from plotting.plot_components_ops import components_ops_plot
 from plotting.plot_components_vmas import components_vmas_plot
 from plotting.plot_vmacount import vmacount_ts_plot, vmacount_max_col_plot
 from plotting.plot_vmaops import *
-from plotting.plot_addrspace_sizes import vm_size_ts_plot, virt_phys_size_ts_plot, virt_phys_ratio_ts_plot, virt_phys_size_component_ts_plot, virt_phys_ratio_component_ts_plot, virt_pte_size_ts_plot, virt_pte_ratio_ts_plot, virt_phys_diff_ts_plot
+from plotting.plot_addrspace_sizes import vm_size_ts_plot, resident_ts_plot, resident_table, virt_phys_size_ts_plot, virt_phys_ratio_ts_plot, virt_phys_size_component_ts_plot, virt_phys_ratio_component_ts_plot, virt_pte_size_ts_plot, virt_pte_ratio_ts_plot, virt_phys_diff_ts_plot
 #from plotting.plot_perf_missrate import *
 from plotting.plot_perf_totals import new_totals_ts_plot, new_totals_col_plot
 from util.pjh_utils import *
@@ -45,10 +45,14 @@ analysis_plotlist = [
 		#vmaops_nonallocfree_plot,
 		vm_size_ts_plot,
 
-		# PTE plots:
+		# Rss plots:
+		resident_table,
+		resident_ts_plot,
 		virt_phys_size_ts_plot,
 		virt_phys_ratio_ts_plot,
 		virt_phys_diff_ts_plot,
+		
+		# PTE plots:
 		#virt_pte_size_ts_plot,
 		#virt_pte_ratio_ts_plot,
 		#virt_phys_size_component_ts_plot,  # causing chrome + kbuild errors??
@@ -66,19 +70,19 @@ analysis_plotlist = [
 # used to create the new plot - the new plot method should only take
 # the event name as an argument, and return a multiapp_plot object.
 missrate_event_plots = [
-		'dTLB-loads',
-		'dTLB-stores',
-		'iTLB-loads',
+		#'dTLB-loads',
+		#'dTLB-stores',
+		#'iTLB-loads',
 	]
 totals_ts_plots = [
-		#'dTLB-loads',
-		#'dTLB-stores',
-		#'iTLB-loads',
+		##'dTLB-loads',
+		##'dTLB-stores',
+		##'iTLB-loads',
 	]
 totals_col_plots = [
-		#'dTLB-loads',
-		#'dTLB-stores',
-		#'iTLB-loads',
+		##'dTLB-loads',
+		##'dTLB-stores',
+		##'iTLB-loads',
 	]
 perf_plotlist = []  # list of tuples: (eventlist, method to create new plot)
 perf_plotlist.append((totals_ts_plots, new_totals_ts_plot))
