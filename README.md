@@ -53,7 +53,8 @@ Setup steps for Python analysis / plotting scripts:
 
 To execute the applications and trace their virtual memory behavior:
 
-1. Set conf/applist.py to include the apps you want to run
+1. Set conf/applist.py to include the apps you want to run. **Important notes about plots:**
+    * The Rss (physical memory) plots each consume a large amount of memory, since Rss events are much more frequent than virtual memory events. It is recommended to build these plots separately from other plots, if possible. For example, building all of the Rss plots along with the VM size plot for ten applications took 400 minutes, probably because swapping was necessary.
 1. `./run_apps.py -h`
 1. `./run_apps.py`
 

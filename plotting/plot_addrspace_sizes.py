@@ -136,11 +136,13 @@ def update_component_sizes(components, auxdata, size, add_or_sub,
 		# has not been encountered yet, its entry will be initialized
 		# to 0 and then size will be added / subtracted.
 		if add_or_sub == 'add':
+			size = float(size)
 			print_debug_sizes(("adding size {} to component_sizes["
 				"{}]={}").format(size, vp_component,
 				auxdata.component_sizes[vp_component]))
 			auxdata.component_sizes[vp_component] += size
 		elif add_or_sub == 'sub':
+			size = float(size)
 			print_debug_sizes(("subtracting size {} from component_sizes["
 				"{}]={}").format(size, vp_component,
 				auxdata.component_sizes[vp_component]))
@@ -161,7 +163,7 @@ def update_component_sizes(components, auxdata, size, add_or_sub,
 				print_unexpected(True, tag, ("unexpected component {} "
 					"for add_or_sub={} (RssEvent)").format(
 					component, add_or_sub))
-			rss_size = rss_count * vm.PAGE_SIZE_BYTES
+			rss_size = float(rss_count * vm.PAGE_SIZE_BYTES)
 			auxdata.component_sizes[vp_component] = rss_size
 			print_debug_sizes(("set component_sizes[{}] = {} [{}] "
 				"from RssEvent").format(vp_component, rss_size,
@@ -444,20 +446,14 @@ def update_ratios(auxdata, component, timestamp, do_difference):
 	ratio_max = "{}-max".format(ratio_component)
 	diff_max  = "{}-max".format(diff_component)
 
-	try:
-		virt_size = auxdata.component_sizes[virt_component]
-	except KeyError:
-		virt_size = 0.0
-	try:
-		phys_size = auxdata.component_sizes[phys_component]
-	except KeyError:
-		phys_size = 0.0
+	virt_size = auxdata.component_sizes.get(virt_component, 0.0)
+	phys_size = auxdata.component_sizes.get(phys_component, 0.0)
 
 	point = datapoint()
 	point.timestamp = timestamp
 
 	if do_difference:
-		diff_size = float(virt_size) - float(phys_size)
+		diff_size = virt_size - phys_size
 		if diff_size < 0.0:
 			print_unexpected(False, tag, ("calculated negative "
 				"difference between virt_size={} and phys_size={}: "
@@ -480,7 +476,7 @@ def update_ratios(auxdata, component, timestamp, do_difference):
 		point.component = diff_component
 	else:
 		if virt_size != 0.0:  # is == 0 comparison ok for floats in python?
-			nowratio = (phys_size / virt_size)
+			nowratio = phys_size / virt_size
 			if nowratio > 1.0:
 				# Do we still expect this to happen now that we're using
 				# rss events instead of pte events for tracking resident
@@ -582,6 +578,103 @@ def resident_datafn(auxdata, plot_event, tgid, currentapp):
 			do_ratio=False, separate_components=False,
 			virt_or_phys='phys')
 
+def resident_table_datafn(auxdata, plot_event, tgid, currentapp):
+	tag = 'resident_table_datafn'
+
+	# The goal of this table is to capture what is visually intuitive
+	# when looking at the Rss plots for physical-to-virtual ratio and
+	# resident memory size: during each application's execution (typically
+	# towards the end of its execution), what is the greatest ratio of
+	# physical-to-virtual memory? And at this point, what is the absolute
+	# size of physical and virtual memory, so that we can know the amount
+	# of "wasted" physical memory if we did not have demand paging?
+	#
+	# Because of spikes in the ratios, we can't simply take the maximum
+	# ratio and use that point. Instead of trying to filter out these
+	# spikes, a reasonable approach seems to be to take some percentile
+	# of the ratio data as the "sustained peak", which hopefully reflects
+	# what is visually intuitive. So, this function creates a datapoint
+	# every time a virtual or physical memory event occurs, and then the
+	# plotfn (resident_tablefn()) calculates the appropriate percentiles.
+	#
+	# This approach works acceptably well with the event and plotting
+	# capabilities that I already have. One problem with this approach
+	# is that ratio datapoints are only created when a change in virtual
+	# or physical memory size occurs. This means that if an application
+	# has a sustained period of time where the memory sizes do not change,
+	# then this period is not "weighted" as much as we'd like it to be
+	# during the percentile calculation. A more sophisticated approach
+	# would take into account the time intervals between events and weight
+	# the ratios used for the percentile calculation, but I have not yet
+	# had time to explore this approach.
+	#
+	# On an initial pass, it turns out that the 95th percentile looks
+	# great for every app except for chrome and office. For chrome, the
+	# ratio is fine, but it would be nice if this point happened to be
+	# taken at a point later in the execution, with a greater VM size.
+	# For office, unfortunately the 95th percentile is unacceptable -
+	# the 100% ratio doesn't match the ~85% ratio that is completely
+	# obvious on the time-series plot, and the VM size at this point
+	# is only 2 MB. It appears that office is the only app that doesn't
+	# have frequent-enough virtual or physical memory events to avoid
+	# the sampling/weighting problem described above.
+	#   Todo: idea for a workaround: in this method, ignore any datapoints
+	#   where the ratio is *greater than 100%* or *less than 0%* - this
+	#   should eliminate some of the outliers for office (and others) that
+	#   are "skewing" the 95th percentile data.
+
+	# Don't do anything fancy when updating vm / rss size.
+	do_ratio = False
+	separate_components = False
+	do_difference = False
+
+	if plot_event.vma:
+		updatepoints = update_vm_size(plot_event.vma, auxdata,
+			do_ratio, separate_components, do_difference)
+		timestamp = plot_event.vma.timestamp
+	elif plot_event.rss_event:
+		updatepoints = update_rss_size(plot_event.rss_event, auxdata,
+			do_ratio, separate_components, do_difference)
+		timestamp = plot_event.rss_event.timestamp
+	else:
+		# We don't care about this plot_event.
+		return None
+
+	# The methods used to construct new datapoints for plots (update_vm_size,
+	# update_rss_size, and update_component_sizes) have become somewhat
+	# complex, and were written under the assumption that we want to
+	# calculate *either* a ratio or an absolute size. However, for this
+	# table, we need to keep track of datapoints containing both ratios
+	# and virtual + physical sizes. So, after calling the update_*size*()
+	# methods above, if we aren't ignoring this vma / event (there is at
+	# least one new point in updatepoints), then construct our own
+	# datapoint type here with exactly the information that we need for
+	# this table.
+	if len(updatepoints) > 0:
+		virt_size = auxdata.component_sizes.get(vm.VIRT_LABEL, 0.0)
+		phys_size = auxdata.component_sizes.get(vm.PHYS_LABEL, 0.0)
+
+		# When calculating ratio + diff, round down to 1.0 / up to 0.0
+		# respectively; see update_ratios().
+		if virt_size != 0.0:
+			ratio = min(phys_size / virt_size, 1.0)
+		else:
+			ratio = 0.0
+		#diff_size = max(virt_size - phys_size, 0.0)
+
+		point = datapoint()
+		point.timestamp = timestamp
+		point.count = ratio
+		point.xval = phys_size   # hacky...
+		point.yval = virt_size   # hacky...
+		point.appname = currentapp
+
+		seriesname = currentapp
+		return [(seriesname, point)]
+
+	return None
+
+
 def virt_phys_size_datafn(auxdata, plot_event, tgid, currentapp):
 	return size_datafn(auxdata, plot_event, tgid, currentapp,
 			do_ratio=False, separate_components=False,
@@ -625,7 +718,7 @@ def resident_ts_plotfn(seriesdict, plotname, workingdir):
 	tag = 'resident_ts_plotfn'
 
 	#ysplits = None
-	ysplits = [1, 3]
+	ysplits = [0.5, 5]
 
 	title = 'Resident physical memory over time'
 	yaxis = "Amount of resident physical memory ({})".format(
@@ -695,7 +788,7 @@ def vm_ratio_ts_plotfn(seriesdict, plotname, workingdir):
 	# Now, iterate over all of the serieslists in the seriesdict
 	# and insert them into a new plotdict.
 	plotdict = construct_scale_ts_plotdict(seriesdict)
-
+	
 	ysplits = None
 	title = ("Ratio of resident to virtual memory").format()
 	xaxis = "Execution time"
@@ -703,10 +796,123 @@ def vm_ratio_ts_plotfn(seriesdict, plotname, workingdir):
 	return plot_time_series(plotdict, title, xaxis, yaxis, ysplits,
 			logscale=False, yax_units='percents', cp_series=cp_series)
 
+def write_rss_table(plotname, workingdir, table, perc):
+	tag = 'write_rss_table'
+
+	fname = "{}/{}-{}".format(workingdir, plotname, perc)
+	f = open(fname, 'w')
+	#fcolwidth = max(map(len, table.keys())) + 2
+	fcolwidth = len("Application") + 2
+	colwidth = 14
+	write_vim_modeline_nowrap(f)
+	
+	header = ["Application".rjust(fcolwidth)]
+	header.append("Ratio".rjust(colwidth))
+	header.append("Rss size".rjust(colwidth))
+	header.append("VM size".rjust(colwidth))
+	header.append("Difference".rjust(colwidth))
+
+	f.write("{}th percentile physical-to-virtual memory ratios\n".format(
+		perc))
+	f.write("\n")
+	f.write("{}\n".format('\t'.join(header)))
+
+	formatter = pretty_bytes
+	sorted_keys = list(sorted(table.keys()))
+	for appname in sorted_keys:
+		row = table[appname]
+		appline = []
+		appline.append("{}".format(appname).rjust(fcolwidth))
+		appline.append("{:.2f}%".format(row[0]*100).rjust(colwidth))
+		appline.append("{}".format(formatter(row[1])).rjust(colwidth))
+		appline.append("{}".format(formatter(row[2])).rjust(colwidth))
+		appline.append("{}".format(formatter(row[2] - row[1])).rjust(colwidth))
+		f.write("{}\n".format('\t'.join(appline)))
+	
+	f.close()
+
+	return
+
+def resident_tablefn(seriesdict, plotname, workingdir):
+	tag = 'resident_tablefn'
+
+	# seriesdict maps app names to lists of series for that app. This
+	# is convenient because we want to normalize all of the series
+	# for an app to each other. One (or more?) of the series for an
+	# app may contain checkpoint data rather than typical series
+	# data - this doesn't concern us here though, we want to normalize
+	# the checkpoints for this app as well.
+	# Because normalize_appserieslist() normalizes every app's series
+	# to the range [0..1], normalizing every app's series also serves
+	# to normalize every app to every other app, so after this point
+	# no additional normalization should be necessary... I think.
+	for appserieslist in seriesdict.values():
+		normalize_appserieslist(appserieslist, True)
+	
+	# Now, iterate over all of the serieslists in the seriesdict
+	# and insert them into a new plotdict.
+	plotdict = construct_scale_ts_plotdict(seriesdict)
+
+	# Ok, now we have a "plotdict" that simply maps series names to
+	# lists of datapoints. In each datapoint, from resident_table_datafn(),
+	# we have the rss-to-virt ratio in .count, the rss size in .xval,
+	# and the virtual size in .yval.
+	sorted_keys = list(sorted(plotdict.keys()))
+	for seriesname in sorted_keys:
+		plotdict[seriesname] = list(sorted(plotdict[seriesname],
+		                            key=lambda dp: dp.count))
+	
+	# What percentiles do we want to calculate? To determine this, I
+	# compared a wide range of percentiles against the Rss time-series
+	# plots (for both size and ratio) to see which percentiles best and
+	# most reasonably captured the "maximum" ratio of physical-to-
+	# virtual memory, which is visually intuitive. For some applications
+	# the 99th percentile works well, but unfortunately not for all
+	# applications. For example, the 99th percentile ratio for mysql is
+	# 42% and the VM size is only 69 MB; in contrast, the 95th percentile
+	# ratio is just 8.3% and the VM size is 11 GB, which more accurately
+	# reflects the "steady state" execution of mysql.
+	perc_to_calc = [95, 97.5, 99]
+	#perc_to_calc = [50, 75, 80, 85, 90, 95, 97.5, 99]
+	#perc_to_calc = [95, 97.5, 98, 99, 99.5, 99.9]
+
+	for i in range(len(perc_to_calc)):
+		perc = perc_to_calc[i]
+		table = {}
+		for seriesname in sorted_keys:
+			sortedpoints = plotdict[seriesname]
+			k = (len(sortedpoints)-1) * (float(perc) / 100)
+			idx = math.floor(k)
+			point = sortedpoints[idx]
+			average_two_points = False
+			if average_two_points and idx != k and idx < len(sortedpoints)-1:
+				point2 = sortedpoints[idx+1]
+				ratio = (point.count + point2.count) / 2
+				rss_size = (point.xval + point2.xval) / 2
+				vm_size = (point.yval + point2.yval) / 2
+			else:
+				# If average_two_points is false, then just "round down";
+				# this ensures that the rss_size and vm_size used were
+				# actually observed at some point during the execution.
+				ratio = point.count
+				rss_size = point.xval
+				vm_size = point.yval
+			print_debug(tag, ("percentile {}: series={}, ratio={}, "
+				"rss_size={}, vm_size={}, test_ratio={}").format(
+				perc, seriesname, ratio, rss_size, vm_size,
+				rss_size/vm_size))
+			table[seriesname] = (ratio, rss_size, vm_size)
+		write_rss_table(plotname, workingdir, table, perc)
+
+	return None
+
 vm_size_ts_plot = multiapp_plot('vm-size-ts', vm_size_auxdata,
 		vm_size_ts_plotfn, vm_size_datafn, vm_size_resetfn)
 resident_ts_plot = multiapp_plot('resident-ts', vm_size_auxdata,
 		resident_ts_plotfn, resident_datafn, vm_size_resetfn)
+
+resident_table = multiapp_plot('resident-table', vm_size_auxdata,
+		resident_tablefn, resident_table_datafn, vm_size_resetfn)
 
 # Newer rss-event-based plots:
 virt_phys_size_ts_plot = multiapp_plot('virt-phys-size', vm_size_auxdata,

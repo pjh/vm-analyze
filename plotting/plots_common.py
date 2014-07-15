@@ -1595,6 +1595,36 @@ def wrap_active_vmas(auxdata, active_vmas, appname, app_pid):
 		
 	return plotevents
 
+# Expected format of plotdict: simply maps series names to lists of
+# datapoints. This method will only consider the .count field of each
+# datapoint.
+def calc_plotdict_percentiles(plotdict):
+	tag = 'calc_plotdict_percentiles'
+
+	perc_to_calc = [50, 75, 80, 85, 90, 95, 97.5, 99]
+	percentdict = dict()
+
+	for (series, pointlist) in plotdict.items():
+		print_debug(tag, ("series {}: {} points").format(series,
+			len(pointlist)))
+		counts = np.array(list(map(lambda dp: dp.count, pointlist)))
+		percentiles = np.percentile(counts, perc_to_calc)
+			#, overwrite_input=True)
+		#print_debug(tag, ("series {}: perc_to_calc={}, percentiles={}").format(
+		#	perc_to_calc, percentiles))
+		print_debug(tag, ("series {}: percentiles are {}").format(
+			series, list(zip(perc_to_calc, percentiles))))
+		percentdict[series] = percentiles
+	sorted_keys = list(sorted(plotdict.keys()))
+	for i in range(len(perc_to_calc)):
+		perc = perc_to_calc[i]
+		print_debug(tag, ("{}th percentiles:").format(perc))
+		for series in sorted_keys:
+			print_debug(tag, ("\t{}\t{}").format(series,
+				percentdict[series][i]))
+
+	return
+
 ##############################################################################
 
 if __name__ == '__main__':
