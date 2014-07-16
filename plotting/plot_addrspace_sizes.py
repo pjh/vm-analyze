@@ -618,10 +618,16 @@ def resident_table_datafn(auxdata, plot_event, tgid, currentapp):
 	# is only 2 MB. It appears that office is the only app that doesn't
 	# have frequent-enough virtual or physical memory events to avoid
 	# the sampling/weighting problem described above.
-	#   Todo: idea for a workaround: in this method, ignore any datapoints
-	#   where the ratio is *greater than 100%* or *less than 0%* - this
-	#   should eliminate some of the outliers for office (and others) that
-	#   are "skewing" the 95th percentile data.
+	#   Workarounds: later in this method, ignore any datapoints where
+	#   the ratio is *greater than 100%* or *less than 0%* - this helps
+	#   eliminate some of the outliers for office (and others) that are
+	#   "skewing" the 95th percentile data, and makes office look
+	#   reasonable. Additionally, to find the largest difference for
+	#   chrome and ffox, in the percentile-calculating method we can
+	#   search for the largest difference within e.g. 1% of the ratio
+	#   that was actually calculated for the percentile. With both of
+	#   these implemented, the resulting table pretty accurately reflects
+	#   what we want to summarize from the timeseries plots.
 
 	# Don't do anything fancy when updating vm / rss size.
 	do_ratio = False
@@ -654,23 +660,27 @@ def resident_table_datafn(auxdata, plot_event, tgid, currentapp):
 		virt_size = auxdata.component_sizes.get(vm.VIRT_LABEL, 0.0)
 		phys_size = auxdata.component_sizes.get(vm.PHYS_LABEL, 0.0)
 
-		# When calculating ratio + diff, round down to 1.0 / up to 0.0
-		# respectively; see update_ratios().
 		if virt_size != 0.0:
-			ratio = min(phys_size / virt_size, 1.0)
+			ratio = phys_size / virt_size
 		else:
-			ratio = 0.0
-		#diff_size = max(virt_size - phys_size, 0.0)
+			ratio = 1234.5   # want to skip this point
+		
+		# Important: if the ratio is greater than 1, then don't bother
+		# saving this datapoint - it's definitely part of some spike in
+		# the ratio time-series plot, so we want to "filter" it out.
+		# Hopefully this will improve the "look" of the percentile data.
+		# Similarly, if our virt_size is 0, then skip this datapoint as
+		# well.
+		if ratio <= 1.0:
+			point = datapoint()
+			point.timestamp = timestamp
+			point.count = ratio
+			point.xval = phys_size   # hacky...
+			point.yval = virt_size   # hacky...
+			point.appname = currentapp
 
-		point = datapoint()
-		point.timestamp = timestamp
-		point.count = ratio
-		point.xval = phys_size   # hacky...
-		point.yval = virt_size   # hacky...
-		point.appname = currentapp
-
-		seriesname = currentapp
-		return [(seriesname, point)]
+			seriesname = currentapp
+			return [(seriesname, point)]
 
 	return None
 
@@ -881,26 +891,72 @@ def resident_tablefn(seriesdict, plotname, workingdir):
 		table = {}
 		for seriesname in sorted_keys:
 			sortedpoints = plotdict[seriesname]
+
+			# Just round down the index, which causes the ratio that
+			# we choose to be lower (making segments look a tiny bit
+			# less-promising). Using a single point, rather than
+			# averaging two points, also ensures that the rss_size and
+			# the vm_size used were actually observed at some point
+			# during the execution.
 			k = (len(sortedpoints)-1) * (float(perc) / 100)
 			idx = math.floor(k)
 			point = sortedpoints[idx]
-			average_two_points = False
-			if average_two_points and idx != k and idx < len(sortedpoints)-1:
-				point2 = sortedpoints[idx+1]
-				ratio = (point.count + point2.count) / 2
-				rss_size = (point.xval + point2.xval) / 2
-				vm_size = (point.yval + point2.yval) / 2
+			ratio = point.count
+
+			# If search_for_largest_diff is set to True, we will search
+			# for the datapoint within +/- ratio_range of the actual
+			# percentile ratio that has the largest difference between
+			# its virtual and physical memory. This more accurately
+			# reflects what we want to summarize from the time-series
+			# data.
+			search_for_largest_diff = True
+			if search_for_largest_diff:
+				ratio_range = 0.01
+				max_diff = point.yval - point.xval
+				max_idx = idx
+				search_idx = idx
+				# Search backwards from the idx:
+				while (search_idx >= 0 and
+						sortedpoints[search_idx].count > ratio - ratio_range):
+					diff = (sortedpoints[search_idx].yval -
+							sortedpoints[search_idx].xval)
+					if diff > max_diff:
+						max_diff = diff
+						max_idx = search_idx
+					search_idx -= 1
+				search_idx = idx
+				# Now search forwards:
+				while (search_idx < len(sortedpoints) and
+						sortedpoints[search_idx].count > ratio + ratio_range):
+					diff = (sortedpoints[search_idx].yval -
+							sortedpoints[search_idx].xval)
+					if diff > max_diff:
+						max_diff = diff
+						max_idx = search_idx
+					search_idx += 1
+				rss_size = sortedpoints[max_idx].xval
+				vm_size = sortedpoints[max_idx].yval
+				if vm_size - rss_size > point.yval - point.xval:
+					# For ten applications that I tested with, we
+					# always do find some point whose difference is
+					# greater than the actual percentile point.
+					print_debug(tag, ("{}: {}th-%ile point has ratio={}, "
+						"rss_size={}, vm_size={}, diff={}; however, searched "
+						"for ratio +/- {}, and found point with greater "
+						"difference: ratio={}, rss_size={}, vm_size={}, "
+						"diff={}").format(seriesname, perc, point.count,
+						pretty_bytes(point.xval), pretty_bytes(point.yval),
+						pretty_bytes(point.yval - point.xval),
+						ratio_range, sortedpoints[max_idx].count,
+						pretty_bytes(rss_size), pretty_bytes(vm_size),
+						pretty_bytes(vm_size - rss_size)))
 			else:
-				# If average_two_points is false, then just "round down";
-				# this ensures that the rss_size and vm_size used were
-				# actually observed at some point during the execution.
-				ratio = point.count
 				rss_size = point.xval
 				vm_size = point.yval
-			print_debug(tag, ("percentile {}: series={}, ratio={}, "
-				"rss_size={}, vm_size={}, test_ratio={}").format(
-				perc, seriesname, ratio, rss_size, vm_size,
-				rss_size/vm_size))
+			#print_debug(tag, ("percentile {}: series={}, ratio={}, "
+			#	"rss_size={}, vm_size={}, test_ratio={}").format(
+			#	perc, seriesname, ratio, rss_size, vm_size,
+			#	rss_size/vm_size))
 			table[seriesname] = (ratio, rss_size, vm_size)
 		write_rss_table(plotname, workingdir, table, perc)
 
