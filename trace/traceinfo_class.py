@@ -20,8 +20,8 @@ import time
 # four events are active here, they will each only be counted for about
 # 50% of the record's execution.
 # To see the full list of available events, run "perf list".
-#PERF_TRACE_DEFAULT_ON = False
-PERF_TRACE_DEFAULT_ON = True
+PERF_TRACE_DEFAULT_ON = False
+#PERF_TRACE_DEFAULT_ON = True
   # can be overridden by individual trace_on() callers.
 PERF_EVENTS = [
 	'dTLB-loads',
@@ -602,10 +602,21 @@ class traceinfo:
 
 		return (success, buffer_full)
 
+	# If outputdir is not specified, the existing trace_outputdir is
+	# used to store the perf data.
 	# Returns True if perf tracing was successfully activated, False on
 	# error.
-	def perf_on(self, outputdir):
+	def perf_on(self, outputdir=None):
 		tag = "{}.perf_on".format(self.tag)
+
+		if outputdir is None:
+			if self.trace_outputdir is None:
+				print_error(tag, ("no outputdir specified and "
+					"trace_outputdir not set"))
+				return False
+			outputdir = self.trace_outputdir
+		print_debug(tag, ("using outputdir={} for perf data").format(
+			outputdir))
 
 		if self.perf_tracing_on:
 			print_error(tag, ("perf tracing is already on! pid={}").format(

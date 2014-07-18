@@ -204,10 +204,21 @@ def start_mc_client(client_stdout, client_stderr, tracer, serverpid,
 	clientpid = client_p.pid
 
 	if WHICHCLIENT == 'cloudsuite':
+		# Only trace perf stats while cloudsuite getput phase is running!
+		# To maximize TLB miss rate, don't start the perf trace until
+		# after the client has already been started, and stop the perf
+		# trace immediately after the trace-wait below.
+		if phase == 'getput':
+			perf_success = tracer.perf_on()
+			if not perf_success:
+				print_error(tag, ("perf_on failed!!!, but continuing"))
+
 		# For cloudsuite, wait for the loader to run to completion,
 		# then return None for the client_p.
 		retcode = tracer.trace_wait(client_p, POLL_PERIOD, WHICHCLIENT,
 				targetpid=serverpid)
+		if phase == 'getput':
+			tracer.perf_off()
 		if retcode == 'error' or retcode == 'full':
 			# Do we expect trace buffer to fill up during this
 			# application? For now, start by treating this as
