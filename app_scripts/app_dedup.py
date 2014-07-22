@@ -83,8 +83,11 @@ def run_dedup(outputdir, dedup_stdout, dedup_stderr, tracer):
 			"None; cmdline={}").format(cmdline))
 		return (False, -1)
 
+	if not tracer.perf_on():
+		print_error(tag, ("perf_on() failed, but continuing"))
 	prefix = 'dedup'
 	retcode = tracer.trace_wait(dedup_p, poll_period, prefix)
+	tracer.perf_off()
 
 	if retcode == 'full':
 		# Count this as an error: don't expect trace buffer to fill

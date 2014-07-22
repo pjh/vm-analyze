@@ -172,9 +172,13 @@ def run_office(outputdir, office_stdout, office_stderr, display, tracer):
 		print_error(tag, ("Popen returned None; cmd={}").format(cmd))
 		return (False, -1)
 
+	if not tracer.perf_on():
+		print_error(tag, ("perf_on() failed, but continuing"))
 	prefix = 'xdotool'
 	retcode = tracer.trace_wait(xdotool_p, poll_period, prefix,
 			targetpid=office_p.pid)
+	tracer.perf_off()
+
 	if retcode == 'error' or retcode == 'full':
 		# Don't expect trace buffer to fill up during this application;
 		# count this as an error.

@@ -3,6 +3,10 @@
 # Copyright (c) 2012-2014 Peter Hornyack and University of Washington
 
 # Graph 500 benchmark.
+#
+# NOTE: with 4 cores, a 1 GB per-core buffer for trace events may not
+# be enough for g500_size=24; 1.5 GB per-core buffer does seem to
+# be enough.
 
 from app_scripts.app_to_run_class import *
 from trace.run_common import *
@@ -52,8 +56,11 @@ def run_g500(omp_or_seq, outputdir, g500_stdout, g500_stderr, tracer):
 			"None; cmdline={}").format(which, cmdline))
 		return (False, -1)
 
+	if not tracer.perf_on():
+		print_error(tag, ("perf_on() failed, but continuing"))
 	prefix = "g500{}".format(omp_or_seq)
 	retcode = tracer.trace_wait(g500_p, pollperiod, prefix)
+	tracer.perf_off()
 
 	if retcode == 'full' or retcode == 'error':
 		# Count a full trace buffer as an error - don't expect this

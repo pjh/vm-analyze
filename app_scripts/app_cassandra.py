@@ -523,8 +523,11 @@ def cassandra_exec(output_dir):
 			success = False
 
 	if success:
+		if not tracer.perf_on():
+			print_error(tag, ("perf_on() failed, but continuing"))
 		success = ycsb_run(ycsb_params_fname, output_dir,
 				ycsb_stdout, ycsb_stderr)
+		tracer.perf_off()
 		retcode = tracer.trace_checkpoint('after-ycsb-run',
 				targetpid=cass_p.pid)
 		if retcode == 'error' or retcode == 'full':

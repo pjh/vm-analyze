@@ -5,6 +5,7 @@
 from plotting.multiapp_plot_class import *
 from util.pjh_utils import *
 from plotting.plots_common import *
+import analyze.perf_analysis
 import collections
 
 ##############################################################################
@@ -248,7 +249,27 @@ def missrate_counts_datafn(auxdata, plot_event, tgid, currentapp):
 
 ##############################################################################
 
-def missrate_ts_plotfn(seriesdict, plotname, workingdir):
+def rate_ts_plotfn(seriesdict, plotname, workingdir):
+	# ugh - need to separate plotname and title in multiapp_plot class...
+	if analyze.perf_analysis.PTW_TITLE in plotname:
+		name = analyze.perf_analysis.PTW_TITLE
+		ylabel = 'Percentage of execution time'
+	else:
+		name = plotname
+		ylabel = None
+	return missrate_ts_plotfn(seriesdict, name, workingdir, ylabel)
+
+def rate_avg_plotfn(seriesdict, plotname, workingdir):
+	# ugh - need to separate plotname and title in multiapp_plot class...
+	if analyze.perf_analysis.PTW_TITLE in plotname:
+		name = analyze.perf_analysis.PTW_TITLE
+		ylabel = 'Percentage of execution time'
+	else:
+		name = plotname
+		ylabel = None
+	return missrate_avg_plotfn(seriesdict, name, workingdir, ylabel)
+
+def missrate_ts_plotfn(seriesdict, plotname, workingdir, ylabel=None):
 	tag = 'missrate_ts_plotfn'
 
 	for appserieslist in seriesdict.values():
@@ -269,15 +290,18 @@ def missrate_ts_plotfn(seriesdict, plotname, workingdir):
 		#ysplits = [0.015, 0.020, 0.025]
 		ysplits = [0.005, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09]
 	else:
-		ysplits = []
+		#ysplits = []
+		ysplits = [0.005, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09]
 
-	title = ("{} miss rate").format(plotname)
+	title = ("{}").format(plotname)
+	#title = ("{} miss rate").format(plotname)
 	xaxis = "Execution time"
-	yaxis = "Miss rate"
-	return plot_time_series(plotdict, title, xaxis, yaxis, ysplits,
+	if not ylabel:
+		ylabel = "Miss rate"
+	return plot_time_series(plotdict, title, xaxis, ylabel, ysplits,
 			logscale=False, yax_units='percents', cp_series=cp_series)
 
-def missrate_avg_plotfn(seriesdict, plotname, workingdir):
+def missrate_avg_plotfn(seriesdict, plotname, workingdir, ylabel=None):
 	tag = 'missrate_avg_plotfn'
 
 	for appserieslist in seriesdict.values():
@@ -285,9 +309,11 @@ def missrate_avg_plotfn(seriesdict, plotname, workingdir):
 	cp_series = handle_cp_series(seriesdict)
 	plotdict = construct_scale_ts_plotdict(seriesdict, uselastpoint=True)
 
-	title = ("{} miss rate").format(plotname)
+	title = ("{}").format(plotname)
+	#title = ("{} miss rate").format(plotname)
 	xlabel = ''
-	ylabel = 'Average miss rate'
+	if not ylabel:
+		ylabel = 'Average miss rate'
 	return plot_columns_old(plotdict, title, xlabel, ylabel, sortcolumns=True,
 			logscale=False, yax_units='percents')
 
@@ -303,6 +329,18 @@ def new_missrate_avg_plot(eventname):
 	plotname = "{}-avg".format(eventname)
 	return multiapp_plot(plotname, missrate_counts_auxdata,
 		missrate_avg_plotfn, missrate_counts_datafn,
+		missrate_counts_resetfn)
+
+def new_rate_ts_plot(eventname):
+	plotname = "{}-ts".format(eventname)
+	return multiapp_plot(plotname, missrate_ts_auxdata,
+		rate_ts_plotfn, missrate_window_datafn,
+		missrate_ts_resetfn)
+
+def new_rate_avg_plot(eventname):
+	plotname = "{}-avg".format(eventname)
+	return multiapp_plot(plotname, missrate_counts_auxdata,
+		rate_avg_plotfn, missrate_counts_datafn,
 		missrate_counts_resetfn)
 
 if __name__ == '__main__':
