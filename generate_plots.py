@@ -41,9 +41,8 @@ def find_analysis_dirs(measurementdir):
 #   Passes those files to the specified analysis_method, which will
 #   write outputfiles into the specified analysis_dirname
 # Returns: a list of all of the plots generated during the analysis runs.
-def analyze_apps(measurementdir, target_fname,
-		analysis_method, group_multiproc,
-		process_userstacks, lookup_fns, skip_page_events):
+def analyze_apps(measurementdir, target_fname, analysis_method,
+		group_multiproc, process_userstacks, lookup_fns, skip_page_events):
 	tag = 'analyze_apps'
 
 	plotlist = []

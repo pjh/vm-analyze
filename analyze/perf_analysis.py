@@ -25,13 +25,21 @@ import re
 import shlex
 import subprocess
 
+PTW_TITLE = 'DTLB page table walk cycles'
+PAIR_EVENT_TO_STR = {
+	'r108' : 'dTLB-load-misses',
+	'r149' : 'dTLB-misses',
+	'r408' : 'dTLB-load-walkcycles',
+	'r449' : PTW_TITLE,
+}
+
 # Regular expressions: note that these may depend on the particular
 # version of perf that is used to generate the perf.dump files, and
 # definitely depend on the additional output messages that I added
 # for raw dump files (in tools/perf/util/session.c:dump_sample()).
 # Ugh, spaces in VERBOSE regexes are obnoxious.
 perf_event_header_re = re.compile(r"""
-	[#]\ event\ :\ name\ =\ (?P<eventname>[a-zA-Z\-_]+),
+	[#]\ event\ :\ name\ =\ (?P<eventname>[a-zA-Z0-9\-_]+),
 	\ type\ =\ (?P<type>[\d]+),
 	\ .+
 	id\ =\ {\ (?P<eids>[\d, ]+)\ }
@@ -535,6 +543,12 @@ HAS_MISS_EVENT = {   # for perf in linux-3.9.4
 		'LLC-stores'			: 'LLC-store-misses',
 		'LLC-prefetches'		: 'LLC-prefetch-misses',
 	}
+HAS_PAIR_EVENT = {
+		'r108'	: 'cycles',
+		'r149'	: 'cycles',
+		'r408'	: 'cycles',
+		'r449'	: 'cycles',
+	}
 
 def is_miss_event(eventname):
 	tag = 'is_miss_event'
@@ -543,6 +557,13 @@ def is_miss_event(eventname):
 	# dTLB-prefetch-misses, iTLB-load-misses, L1-dcache-load-misses,
 	# etc.
 	if 'misses' in eventname:
+		return True
+	# Hack: for event / plotting purposes, treat TLB walk cycle events
+	# as "misses", so they they'll count towards the numerator that
+	# will be divided by 'cycles':
+	if eventname in ['r408', 'r449']:
+		print_debug(tag, ("treating event name {} as a miss event").format(
+			eventname))
 		return True
 	return False
 
@@ -556,7 +577,7 @@ def is_miss_event(eventname):
 # for creating plots specific to each perf_event_proc_info.
 # 
 # Returns: a list of the created plots.
-def create_event_plots(perf_events, event, missevent):
+def create_event_plots(perf_events, event, missevent, pairevent):
 	tag = 'create_event_plots'
 
 	newplots = []
@@ -601,6 +622,36 @@ def create_event_plots(perf_events, event, missevent):
 			else:
 				print_debug(tag, ("not creating plot for "
 					"event={} that's not in missrate_event_plots").format(
+					event.name))
+
+		if event and pairevent:
+			print_debug(tag, ("looking for event={} ("
+				"pairevent={}) in PlotList.perf_pair_plots={}").format(
+				event.name, pairevent.name, PlotList.perf_pair_plots))
+			if event.name in PlotList.perf_pair_plots:
+				# Hack: copied this code from missrate code above, to
+				# get it working quick and dirty.
+
+				# Make sure that plots don't have the same name, or they
+				# will overwrite each other!
+				pl = []
+				try:
+					name = PAIR_EVENT_TO_STR[event.name]
+				except KeyError:
+					#name = "{}".format(event.name)
+					name = "{}-{}".format(event.name, pairevent.name)
+				pairplot_ts = plot_perf_missrate.new_rate_ts_plot(name)
+				pl.append(pairplot_ts)
+				pairplot_avg = plot_perf_missrate.new_rate_avg_plot(name)
+				pl.append(pairplot_avg)
+
+				for p in pl:
+					event.addplot(p, leader)
+					pairevent.addplot(p, leader)
+					newplots.append(p)
+			else:
+				print_debug(tag, ("not creating plot for "
+					"event={} that's not in perf_pair_plots").format(
 					event.name))
 
 		if event:  # plots for lone events:
@@ -696,7 +747,7 @@ def handle_event_header(perf_events, event_header_match):
 		print_error(tag, "event_header_match is None!")
 		return
 
-	event_name    = event_header_match.group('eventname').strip()
+	event_name     = event_header_match.group('eventname').strip()
 	event_eids_str = event_header_match.group('eids')
 	posint_re = re.compile(r'\d+')
 	event_eids = posint_re.findall(event_eids_str)
@@ -741,7 +792,22 @@ def header_complete(perf_events):
 		except KeyError:
 			missevent = None
 
-		newplots = create_event_plots(perf_events, event, missevent)
+		pairname = HAS_PAIR_EVENT.get(event.name)
+		if pairname:
+			pairevent = perf_events.get_by_name(pairname)
+			if not pairevent:
+				print_warn(tag, ("event {} should have a pair "
+					"event {}, but the pair event is not found "
+					"in the perf_events tracker").format(event.name,
+					pairname))
+			else:
+				print_debug(tag, ("found event pair: ({}, "
+					"{})").format(event.name, pairevent.name))
+		else:
+			pairevent = None
+
+		newplots = create_event_plots(perf_events, event, missevent,
+					pairevent)
 		allplots += newplots   # don't use .append()!
 
 	return allplots

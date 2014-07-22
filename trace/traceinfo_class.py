@@ -20,10 +20,23 @@ import time
 # four events are active here, they will each only be counted for about
 # 50% of the record's execution.
 # To see the full list of available events, run "perf list".
-PERF_TRACE_DEFAULT_ON = False
-#PERF_TRACE_DEFAULT_ON = True
-  # can be overridden by individual trace_on() callers.
-PERF_EVENTS = [
+
+PERF_EVENTS_WALKCYCLES = [
+	'r408',   # stjohns: DTLB_LOAD_MISSES.WALK_CYCLES
+	'r449',   # stjohns: DTLB_MISSES.WALK_CYCLES
+	'cycles',
+	#'r108',  # stjohns: DTLB_LOAD_MISSES.ANY: same as dTLB-load-misses
+	#'r149',
+	  # stjohns: DTLB_MISSES.ANY: slightly greater than dTLB-load-misses
+	  # plus dTLB-store-misses... not quite sure what the difference is.
+]
+PERF_EVENTS_TO_STR = {
+	'r108' : 'dTLB-load-misses',
+	'r149' : 'dTLB-misses',
+	'r408' : 'dTLB-load-walkcycles',
+	'r449' : 'DTLB walk cycles',
+}
+PERF_EVENTS_OLD = [
 	'dTLB-loads',
 	'dTLB-load-misses',
 	'dTLB-stores',
@@ -49,6 +62,7 @@ PERF_EVENTS = [
 	#'LLC-prefetches',
 	#'LLC-prefetch-misses',
 	]
+PERF_EVENTS = PERF_EVENTS_WALKCYCLES
 PERF_FREQ = 1000
   # By using the -F flag to perf record, the number of events counted
   # before generating a sample interrupt will be dynamically tuned to
@@ -80,6 +94,7 @@ PERF_STDERR     = 'perf.stderr'
 PERF_DATA       = 'perf.data'
 PERF_DUMPFILE   = 'perf.dump'
 PERF_REPORTFILE = 'perf.report'
+PERF_TRACE_DEFAULT_ON = False
 
 # Tracing directories and parameters: 1 for true / enable, 0 for false /
 # disable.
@@ -619,6 +634,9 @@ class traceinfo:
 			outputdir))
 
 		if self.perf_tracing_on:
+			# Now that I've added separate calls to perf_on() in the app
+			# scripts, this case will be hit regularly if
+			# PERF_TRACE_DEFAULT_ON is set to True.
 			print_error(tag, ("perf tracing is already on! pid={}").format(
 				self.perf_p.pid))
 			return False
