@@ -206,7 +206,8 @@ def kernelbuild_exec(outputdir):
 
 	target_pids = []
 	(build_stdout, build_stderr) = build_init(outputdir, 'traced')
-	success = tracer.trace_on(outputdir, descr='starting kernelbuild')
+	success = tracer.trace_on(outputdir, descr='starting kernelbuild',
+			use_perf=True)
 	if success:
 		(success, build_pid) = run_kernelbuild(outputdir, build_stdout,
 					build_stderr, 'traced', tracer)

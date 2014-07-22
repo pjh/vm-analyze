@@ -107,7 +107,8 @@ def hw_exec(outputdir, static_dynamic):
 	tracer = traceinfo(name)
 	target_pids = []
 
-	success = tracer.trace_on(outputdir, "starting {}".format(name))
+	success = tracer.trace_on(outputdir, "starting {}".format(name),
+			use_perf=True)
 	if not success:
 		print_error(tag, ("trace_on failed, returning [] now").format())
 		hw_cleanup([hw_stdout, hw_stderr])

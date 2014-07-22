@@ -62,8 +62,12 @@ def run_py_script(outputdir, py_stdout, py_stderr, tracer):
 			"py_cmd={}").format(py_cmd))
 		return (False, -1)
 
+	if not tracer.perf_on():
+		print_error(tag, ("perf_on() failed, but continuing"))
 	prefix = 'py'
 	retcode = tracer.trace_wait(py_p, poll_period, prefix)
+	tracer.perf_off()
+
 	if retcode != "success":
 		# Assume that trace buffer filling up is an error for this app.
 		print_error(tag, ("trace_wait() returned {}, either due to process "

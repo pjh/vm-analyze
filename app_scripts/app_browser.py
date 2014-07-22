@@ -940,8 +940,11 @@ def run_browser(outputdir, browser_stdout, browser_stderr, which, tracer):
 		return (False, -1)
 
 	# Visit each URL in the list:
+	if not tracer.perf_on():
+		print_error(tag, ("perf_on() failed, but continuing"))
 	retcode = visit_all_urls(driver, urls, SEPARATE_WINDOWS, tracer,
 			which, targetpid=browser_pid)
+	tracer.perf_off()
 	print_debug(tag, ("got back retcode={} from visit_all_urls, "
 		"this will be returned from this method too").format(retcode))
 

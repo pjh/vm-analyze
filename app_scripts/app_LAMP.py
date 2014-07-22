@@ -92,8 +92,12 @@ def run_client(client, outputdir, tracer, targetpid):
 		urls.append(("{}/{}").format(url_prefix, random_page))
 	print_debug(tag, ("calling visit_all_urls({})").format(urls))
 
+	if not tracer.perf_on():
+		print_error(tag, ("perf_on() failed, but still continuing"))
 	retcode = visit_all_urls(client, urls, False, tracer, WHICHBROWSER,
 			targetpid=targetpid, timeoutsok=False)
+	tracer.perf_off()
+
 	if retcode == 'success':
 		success = True
 	elif retcode == 'full':
