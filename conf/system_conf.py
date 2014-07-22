@@ -44,7 +44,8 @@ trace_group = 'grad_cs'
 memtotal = 24676440   # kB
 num_cores = 4
 num_hw_threads = 4
-suggested_tracebuf_size_kb = 1048576  # 1 GB
+#suggested_tracebuf_size_kb = 1048576  # 1 GB
+suggested_tracebuf_size_kb = 1572864  # 1.5 GB
 #suggested_tracebuf_size_kb = 2097152  # 2 GB
   # 2 GB memory per-core still leaves 23.5 - 8 = 15.5 GB memory
   # for application use. However, the kernel may complain when
