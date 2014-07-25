@@ -254,10 +254,12 @@ def rate_ts_plotfn(seriesdict, plotname, workingdir):
 	if analyze.perf_analysis.PTW_TITLE in plotname:
 		name = analyze.perf_analysis.PTW_TITLE
 		ylabel = 'Percentage of execution time'
+		ysplits = [0.01, 0.05, 0.10, 0.20]
 	else:
 		name = plotname
 		ylabel = None
-	return missrate_ts_plotfn(seriesdict, name, workingdir, ylabel)
+		ysplits = None
+	return missrate_ts_plotfn(seriesdict, name, workingdir, ylabel, ysplits)
 
 def rate_avg_plotfn(seriesdict, plotname, workingdir):
 	# ugh - need to separate plotname and title in multiapp_plot class...
@@ -269,7 +271,8 @@ def rate_avg_plotfn(seriesdict, plotname, workingdir):
 		ylabel = None
 	return missrate_avg_plotfn(seriesdict, name, workingdir, ylabel)
 
-def missrate_ts_plotfn(seriesdict, plotname, workingdir, ylabel=None):
+def missrate_ts_plotfn(seriesdict, plotname, workingdir, ylabel=None,
+		ysplits=None):
 	tag = 'missrate_ts_plotfn'
 
 	for appserieslist in seriesdict.values():
@@ -283,15 +286,18 @@ def missrate_ts_plotfn(seriesdict, plotname, workingdir, ylabel=None):
 	# Need to differentiate between loads and stores here - this is kind
 	# of a hack, but these numbers need to be hardcoded and re-hardcoded
 	# periodically anyway, so ysplits is already a hack no matter what.
-	if 'dTLB-load-misses' in plotname:
-		ysplits = [0.015, 0.04, 0.07, 0.1, 0.2, 0.3]
-		  # These work well with 950mil windowsize for loads
-	elif 'dTLB-store-misses' in plotname:
-		#ysplits = [0.015, 0.020, 0.025]
-		ysplits = [0.005, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09]
-	else:
-		#ysplits = []
-		ysplits = [0.005, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09]
+	if not ysplits:
+		if 'dTLB-load-misses' in plotname:
+			ysplits = [0.015, 0.04, 0.07, 0.1, 0.2, 0.3]
+			  # These work well with 950mil windowsize for loads
+		elif 'dTLB-store-misses' in plotname:
+			#ysplits = [0.015, 0.020, 0.025]
+			ysplits = [0.005, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07,
+					0.08, 0.09]
+		else:
+			#ysplits = []
+			ysplits = [0.005, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07,
+					0.08, 0.09]
 
 	title = ("{}").format(plotname)
 	#title = ("{} miss rate").format(plotname)

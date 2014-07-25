@@ -425,7 +425,8 @@ def bps_plotfn(seriesdict, plotname, workingdir):
 	ysplits = []
 	hlines = [0.01]
 	return plot_lineplot(plotdict, title, xaxis, yaxis, xlabels, ysplits,
-			yax_units='percents', logscale=True, hlines=hlines)
+			yax_units='percents', logscale=True, hlines=hlines,
+			vertical_xlabels=True)
 
 ##############################################################################
 
