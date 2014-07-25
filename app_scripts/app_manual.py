@@ -41,9 +41,12 @@ def manual_loop(output_dir, manual_stdout, manual_stderr):
 						print_error(tag, ("trace_on failed!").format())
 						break
 					trace_active = True
+					if not tracer.perf_on():
+						print_error(tag, ("perf_on() failed, but continuing"))
 					print(("\ttoggled tracing ON; run your app in another "
 						"shell!"))
 				else:
+					tracer.perf_off()
 					(success, buffer_full) = tracer.trace_off(
 							descr='manual toggle off')
 					trace_active = False

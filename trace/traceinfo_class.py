@@ -62,6 +62,7 @@ PERF_EVENTS_OLD = [
 	#'LLC-prefetches',
 	#'LLC-prefetch-misses',
 	]
+#PERF_EVENTS = PERF_EVENTS_OLD
 PERF_EVENTS = PERF_EVENTS_WALKCYCLES
 PERF_FREQ = 1000
   # By using the -F flag to perf record, the number of events counted

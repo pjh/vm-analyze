@@ -25,7 +25,7 @@ import re
 import shlex
 import subprocess
 
-PTW_TITLE = 'DTLB page table walk cycles'
+PTW_TITLE = 'TLB miss cycles'
 PAIR_EVENT_TO_STR = {
 	'r108' : 'dTLB-load-misses',
 	'r149' : 'dTLB-misses',

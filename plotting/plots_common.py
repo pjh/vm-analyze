@@ -536,7 +536,7 @@ def plot_scatter_lineplot(plotdict, title, x_axislabel, y_axislabel,
 
 		# Add a dummy y-label, so that tight_layout() will leave room for
 		# the real y-label we'll add later.
-		ax.set_ylabel('dummy', **style.axislabel_kwargs)
+		ax.set_ylabel('dummy', **style.axislabel_XL_kwargs)
 
 		ax.tick_params(axis='y', right='off',
 			labelsize=style.plotconf['ticklabelsize'],
@@ -610,7 +610,7 @@ def plot_scatter_lineplot(plotdict, title, x_axislabel, y_axislabel,
 		# Calling ax_set_ylabel(y_axislabel) for middle plot doesn't
 		# work here - the space between the subplots is just expanded
 		# so that the label doesn't overlap the top + bottom plots.
-		ax.set_ylabel('', **style.axislabel_kwargs)  # clear dummy label
+		ax.set_ylabel('', **style.axislabel_XL_kwargs)  # clear dummy label
 		if groupnum == 1 and title and len(title) > 1:
 			ax.set_title('', **style.title_kwargs)
 
@@ -728,7 +728,7 @@ def plot_scatter_lineplot(plotdict, title, x_axislabel, y_axislabel,
 	ylabel_kwargs['horizontalalignment'] = 'center'
 	ylabel_kwargs['verticalalignment'] = 'center'  # not 'top'!
 	ylabel_kwargs['rotation'] = 'vertical'
-	xpos = 0.033
+	xpos = 0.025   # used to be 0.033
 	ypos = 0.5     # vertically centered
 	ylabel_text = fig.text(xpos, ypos, y_axislabel_withunits, **ylabel_kwargs)
 
@@ -1231,7 +1231,6 @@ def plot_columns_old(seriesdict, title, x_axislabel, y_axislabel,
 
 	fig = plot_setup_onesubplot(title, 1.0, 1.0)
 	fignum = fig.number
-	numcols = len(seriesdict)
 
 	# Arrange the plot data:
 	appnames = []
@@ -1241,8 +1240,19 @@ def plot_columns_old(seriesdict, title, x_axislabel, y_axislabel,
 	else:
 		tuples = seriesdict.items()
 	for (appname, vmacount) in tuples:
-		appnames.append(appname)
-		yvals.append(vmacount)
+		HACK = False
+		if HACK:
+			# Skip graph500 for this column plot
+			if appname == 'graph':
+				print(("graph: yval for PTW cycle percentage is "
+					"{}").format(vmacount))
+			else:
+				appnames.append(appname)
+				yvals.append(vmacount)
+		else:
+			appnames.append(appname)
+			yvals.append(vmacount)
+	numcols = len(yvals)
 	centers = np.arange(numcols)
 	ymax = max(yvals)
 	print_debug(tag, ("appnames: {}").format(appnames))

@@ -215,14 +215,6 @@ graph_kwargs = {
 		#'marker'	: 'o',
 		'linewidth'	: LINEWIDTH
 	}
-proxy_kwargs = {
-		'color'		: brewer_red,
-		#'color'     : brewer_set2[6],
-		#'facecolor'	: brewer_red,
-		'dashes'	: dash_long_seq,
-		#'marker'	: '^',
-		'linewidth'	: LINEWIDTH
-	}
 hello_kwargs = {
 		'color'		: brewer_green,
 		#'color'     : brewer_set2[7],
@@ -240,8 +232,8 @@ kbuild_kwargs = {
 		#'marker'	: 'D',
 		'linewidth'	: LINEWIDTH
 	}
-mcache_kwargs = {  # Avoid overlap with graph500
-		'color'		: brewer_orange,
+mcache_kwargs = {  # Avoid overlap with graph500...?
+		'color'		: brewer_red,
 		#'color'     : brewer_set2[1],
 		#'facecolor'	: brewer_orange,
 		#'linestyle'	: ':',
@@ -250,25 +242,33 @@ mcache_kwargs = {  # Avoid overlap with graph500
 		'linewidth'	: LINEWIDTH
 	}
 mysql_kwargs = {
-		'color'		: brewer_blue,
+		'color'		: brewer_green,
 		#'color'     : brewer_set2[2],
 		#'facecolor'	: brewer_blue,
 		#'linestyle'	: ':',
-		'dashes'	: dash_short_seq,
+		'dashes'	: dash_long_seq,
 		#'marker'	: '^',
-		'linewidth'	: dotted_linewidth
+		'linewidth'	: LINEWIDTH
 	}
 office_kwargs = {
-		'color'		: brewer_red,
+		'color'		: brewer_purple,
 		#'color'     : brewer_set2[3],
 		#'facecolor'	: brewer_red,
 		#'linestyle'	: ':',
-		'dashes'	: dash_short_seq,
+		'dashes'	: dash_long_seq,
 		#'marker'	: 's',
-		'linewidth'	: dotted_linewidth
+		'linewidth'	: LINEWIDTH
+	}
+proxy_kwargs = {
+		'color'		: brewer_orange,
+		#'color'     : brewer_set2[6],
+		#'facecolor'	: brewer_red,
+		'dashes'	: dash_long_seq,
+		#'marker'	: '^',
+		'linewidth'	: LINEWIDTH
 	}
 python_kwargs = {
-		'color'		: brewer_green,
+		'color'		: brewer_blue,
 		#'color'     : brewer_set2[4],
 		#'facecolor'	: brewer_green,
 		#'linestyle'	: ':',
@@ -277,7 +277,7 @@ python_kwargs = {
 		'linewidth'	: dotted_linewidth
 	}
 redis_kwargs = {
-		'color'		: brewer_purple,
+		'color'		: brewer_red,
 		#'color'     : brewer_set2[5],
 		#'facecolor'	: brewer_purple,
 		#'linestyle'	: ':',
@@ -410,6 +410,12 @@ smallticklabel_kwargs = {
 	}
 axislabel_kwargs = {
 		'size' : plotconf['axislabelsize'],
+	}
+axislabel_XL_kwargs = {
+		# "XL": used for dummy Y-axis labels to push entire subplot
+		# further to the right, so that when the real label is applied,
+		# it won't overlap with the y-tick labels.
+		'size' : plotconf['axislabelsize'] + 20,
 	}
 legend_cols_kwargs = {
 		#'size' : plotconf['legendsize'],
