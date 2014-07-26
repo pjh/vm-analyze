@@ -275,12 +275,14 @@ def billions_formatter_func(n, pos=0):
 # Returns: a matplotlib.figure.Figure instance, or None if a figure
 # could not be generated.
 def plot_time_series(plotdict, title, x_axislabel, y_axislabel,
-		ysplits, logscale=False, yax_units=None, cp_series=None):
+		ysplits, logscale=False, yax_units=None, cp_series=None,
+		more_ytick_space=False):
 	tag = 'plot_time_series'
 
 	return plot_scatter_lineplot(plotdict, title, x_axislabel, y_axislabel,
 			ysplits, logscale=logscale, yax_units=yax_units,
-			cp_series=cp_series, is_timeseries=True, stepped=True)
+			cp_series=cp_series, is_timeseries=True, stepped=True,
+			more_ytick_space=more_ytick_space)
 
 # Simple lineplot, where each series in the plotdict has exactly
 # one point per xlabel. The points in the lists held in the plotdict
@@ -323,7 +325,7 @@ def plot_scatter_lineplot(plotdict, title, x_axislabel, y_axislabel,
 		ysplits, logscale=False, yax_units=None, cp_series=None,
 		is_timeseries=False, xlabels=None, stepped=False,
 #		show_markers=False,
-		hlines=None, vertical_xlabels=False):
+		hlines=None, vertical_xlabels=False, more_ytick_space=False):
 	tag = 'plot_scatter_lineplot'
 
 	if len(plotdict) == 0:
@@ -536,7 +538,10 @@ def plot_scatter_lineplot(plotdict, title, x_axislabel, y_axislabel,
 
 		# Add a dummy y-label, so that tight_layout() will leave room for
 		# the real y-label we'll add later.
-		ax.set_ylabel('dummy', **style.axislabel_XL_kwargs)
+		if more_ytick_space:
+			ax.set_ylabel('dummy', **style.axislabel_XL_kwargs)
+		else:
+			ax.set_ylabel('dummy', **style.axislabel_kwargs)
 
 		ax.tick_params(axis='y', right='off',
 			labelsize=style.plotconf['ticklabelsize'],
@@ -610,7 +615,10 @@ def plot_scatter_lineplot(plotdict, title, x_axislabel, y_axislabel,
 		# Calling ax_set_ylabel(y_axislabel) for middle plot doesn't
 		# work here - the space between the subplots is just expanded
 		# so that the label doesn't overlap the top + bottom plots.
-		ax.set_ylabel('', **style.axislabel_XL_kwargs)  # clear dummy label
+		if more_ytick_space:
+			ax.set_ylabel('', **style.axislabel_XL_kwargs)  # clear dummy label
+		else:
+			ax.set_ylabel('', **style.axislabel_kwargs)  # clear dummy label
 		if groupnum == 1 and title and len(title) > 1:
 			ax.set_title('', **style.title_kwargs)
 
@@ -1240,7 +1248,7 @@ def plot_columns_old(seriesdict, title, x_axislabel, y_axislabel,
 	else:
 		tuples = seriesdict.items()
 	for (appname, vmacount) in tuples:
-		HACK = False
+		HACK = True
 		if HACK:
 			# Skip graph500 for this column plot
 			if appname == 'graph':

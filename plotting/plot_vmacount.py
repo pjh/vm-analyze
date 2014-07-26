@@ -327,7 +327,6 @@ def new_categories_cols_plot(suffix, outputdir):
 def new_max_vmas_cols_plot(suffix, outputdir):
 	plotname = "max_vmas_cols-{}".format(suffix)
 	newplot = multiapp_plot(plotname, categories_auxdata,
-			#max_vmas_plotfn, max_vmas_datafn,
 			max_vmas_plotfn, categories_datafn,
 			categories_resetfn, processfn=max_vmas_process_active_vmas)
 	newplot.set_workingdir(outputdir)
