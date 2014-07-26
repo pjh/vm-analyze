@@ -722,7 +722,8 @@ def vm_size_ts_plotfn(seriesdict, plotname, workingdir):
 	yaxis = "Total size of mapped virtual address space ({})".format(
 			SCALE_LABEL)
 
-	return size_ts_plotfn(seriesdict, plotname, title, yaxis, ysplits)
+	return size_ts_plotfn(seriesdict, plotname, title, yaxis, ysplits,
+			more_ytick_space=True)
 
 def resident_ts_plotfn(seriesdict, plotname, workingdir):
 	tag = 'resident_ts_plotfn'
@@ -760,7 +761,8 @@ def virt_phys_diff_ts_plotfn(seriesdict, plotname, workingdir):
 
 	return size_ts_plotfn(seriesdict, plotname, title, yaxis, ysplits)
 
-def size_ts_plotfn(seriesdict, plotname, title, yaxis, ysplits):
+def size_ts_plotfn(seriesdict, plotname, title, yaxis, ysplits,
+		more_ytick_space=False):
 	tag = 'size_ts_plotfn'
 
 	# More detailed comments are in vm_ratio_ts_plotfn().
@@ -772,7 +774,8 @@ def size_ts_plotfn(seriesdict, plotname, title, yaxis, ysplits):
 
 	xaxis = "Execution time"
 	return plot_time_series(plotdict, title, xaxis, yaxis, ysplits,
-			logscale=False, cp_series=cp_series)
+			logscale=False, cp_series=cp_series,
+			more_ytick_space=more_ytick_space)
 
 def vm_ratio_ts_plotfn(seriesdict, plotname, workingdir):
 	tag = 'vm_ratio_ts_plotfn'

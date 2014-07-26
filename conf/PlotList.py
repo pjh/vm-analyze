@@ -10,10 +10,10 @@ from plotting.plot_addrspace_sizes import vm_size_ts_plot, resident_ts_plot, res
 from plotting.plot_perf_totals import new_totals_ts_plot, new_totals_col_plot
 from util.pjh_utils import *
 
-# note: this plotlist is searched linearly... make sure it
-#   doesn't get *too* big.
+# note: this plotlist is searched linearly... make sure it doesn't get
+#   *too* big.
 point_in_time_plotlist = [
-		'os_overheads_plot',		# used in paper
+		'os_overheads_plot',		# used in paper (table)
 		'basepagesize_plot',		# used in paper
 		'max_vmas_plot',			# used in paper
 		'vma_categories_plot',		# used in paper
@@ -35,7 +35,7 @@ analysis_plotlist = [
 		vmacount_ts_plot,
 		vm_size_ts_plot,
 		vmaops_resizes_plot,
-		vmaops_access_changes_plot,
+		##vmaops_access_changes_plot,  # not used in paper
 		##vmaops_all_plot,			# not used in paper
 		##vmaops_allocs_plot,		# not used in paper
 		##vmaops_frees_plot,		# not used in paper
@@ -45,7 +45,7 @@ analysis_plotlist = [
 		##vmacount_max_col_plot,	# not used in paper, old way
 
 		# Rss plots:
-		resident_table,				# used in paper
+		resident_table,				# used in paper (table)
 		#resident_ts_plot,			# not used in paper
 		#virt_phys_size_ts_plot,	# not used in paper
 		#virt_phys_ratio_ts_plot,	# not used in paper
@@ -69,13 +69,13 @@ analysis_plotlist = [
 # used to create the new plot - the new plot method should only take
 # the event name as an argument, and return a multiapp_plot object.
 perf_pair_plots = [
-		'r408',			# DTLB_LOAD_MISSES.WALK_CYCLES: not used in paper?
+		#'r408',			# DTLB_LOAD_MISSES.WALK_CYCLES: not used in paper
 		'r449',			# DTLB_MISSES.WALK_CYCLES: used in paper
 	]
 missrate_event_plots = [
 		#'dTLB-loads',	# not used in paper
 		#'dTLB-stores',	# not used in paper
-		#'iTLB-loads',
+		##'iTLB-loads',
 	]
 totals_ts_plots = [
 		##'dTLB-loads',
